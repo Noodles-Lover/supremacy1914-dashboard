@@ -1,0 +1,19 @@
+# ===== 與本專案無關的檔案（不納入版本控制） =====
+legacy/            # 已封存的探索/碎片腳本（可復原，但非主流程）
+.workbuddy/        # 本地 agent 記憶與設定
+.browseruse/       # 瀏覽器自動化暫存
+.xdg/              # 沙箱環境變數暫存
+.pip-empty.conf    # pip 代理繞過用的空設定
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+node_modules/
+_check.js         # 臨時 JS 語法檢查檔
+
+# ===== 納入版本控制的內容（明確列出，避免誤加） =====
+# build_dashboard.py
+# extract_day.py
+# data/day_*.json
+# supremacy1914_dashboard.html
+# .gitignore
