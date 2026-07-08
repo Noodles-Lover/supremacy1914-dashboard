@@ -7,12 +7,13 @@ Supremacy 1914 — 一次性自動化設定（僅需執行一次）。
      若遊戲分頁當下開著 → 即時擷取取得；否則用預設 17:00（遊戲開啟後重跑本腳本會自動校正）。
   2. 用 Windows 工作排程器（schtasks）註冊每日工作 Supremacy1914Daily，
      執行 runner.bat（→ run_daily.py）。排程時間取自 automation.json 的 scheduleTime（預設 17:05，可手動編輯）。
-  3. 若環境變數 GITHUB_PAT 已設定，將其寫入本倉庫 .git/config 的 remote URL，
-     使每日推送 main 無需互動（GitHub Actions 才會自動部署）。
+  3. 推送認證（本機 git push 用）：優先 SSH——remote 為 git@ / ssh:// 即視為已設定，
+     無需任何 PAT；僅當 remote 仍是 HTTPS 且提供 GITHUB_PAT 時，才回退將 PAT 嵌入 remote URL。
+     （部署本身由 GitHub Actions 用 GITHUB_TOKEN 完成，與本機推送認證方式無關。）
 
 用法：
   python setup_automation.py
-  GITHUB_PAT=ghp_xxx python setup_automation.py     # 一併設定推送憑證
+  GITHUB_PAT=ghp_xxx python setup_automation.py     # 僅 HTTPS 舊方案才需要，SSH 方案免設
 """
 import os
 import sys
@@ -88,19 +89,26 @@ def main():
     else:
         log(f"[ERR] 註冊失敗：{res.stderr}\n可手動執行：{' '.join(task)}")
 
-    # 3) 設定 git 推送憑證（若提供 PAT）。寫入本倉庫 .git/config 的 remote URL（僅本機，非使用者主目錄）。
-    pat = os.environ.get("GITHUB_PAT")
-    if pat:
+    # 3) 推送認證：SSH 優先（推薦，無需 PAT）
+    #    remote 已是 SSH（git@ / ssh://）即表示用 SSH key 部署，無需任何憑證設定。
+    #    僅當 remote 仍是 HTTPS 且提供 GITHUB_PAT 時，才回退嵌入 PAT（舊方案）。
+    try:
+        cur = subprocess.run(["git", "remote", "get-url", "origin"], cwd=BASE,
+                             capture_output=True, text=True).stdout.strip()
+    except Exception:
+        cur = ""
+    if cur.startswith("git@") or cur.startswith("ssh://"):
+        log(f"[OK] remote 為 SSH（{cur.split('@')[-1]}），已用 SSH key 部署，無需 PAT，每日推送免互動。")
+    elif os.environ.get("GITHUB_PAT"):
+        pat = os.environ["GITHUB_PAT"]
         try:
             url = f"https://__token__:{pat}@github.com/Noodles-Lover/supremacy1914-dashboard.git"
             subprocess.run(["git", "remote", "set-url", "origin", url], cwd=BASE, check=True, capture_output=True, text=True)
-            log("[OK] 已將推送憑證嵌入本倉庫 remote URL（.git/config，每日推送免互動）。")
-            log("     ⚠️ 建議確認自動化正常後到 GitHub 撤銷此 PAT（Settings → Developer settings → Tokens）。")
+            log("[OK] 已將 PAT 嵌入 remote URL（HTTPS 回退方案）。建議改用 SSH 後到 GitHub 撤銷此 PAT。")
         except Exception as e:
-            log(f"[WARN] 無法自動設定推送憑證：{e}")
-            log("       請確保 git push origin main 可成功（手動推送一次或另行設定憑證），每日自動化才能推送。")
+            log(f"[WARN] 無法自動設定推送憑證：{e}；請確保 git push origin main 可成功。")
     else:
-        log("[INFO] 未設定 GITHUB_PAT；請確保 git push origin main 可成功，每日自動化才能推送並觸發部署。")
+        log("[INFO] remote 非 SSH 且未設定 GITHUB_PAT；請確保 git push origin main 可成功（或改用 SSH 部署）。")
 
 
 if __name__ == "__main__":
