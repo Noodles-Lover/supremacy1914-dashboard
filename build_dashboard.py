@@ -560,11 +560,11 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 const GAMES = __GAMES_JSON__;
 const GAME_ORDER = __GAME_ORDER_JSON__;
 const MY_IDS = __MY_IDS_JSON__;
-let MY_ID = MY_IDS[currentGame] || 22;
 let currentGame = GAME_ORDER[GAME_ORDER.length-1];
 let DAYS = GAMES[currentGame].days;
 let DAY_ORDER = GAMES[currentGame].order;
 let currentDay = DAY_ORDER[DAY_ORDER.length-1];
+let MY_ID = MY_IDS[currentGame] || 22;
 let currentRows = [];
 let sortCol = 4, sortAsc = false;
 const charts = {};
