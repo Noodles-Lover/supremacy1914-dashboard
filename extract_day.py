@@ -6,8 +6,8 @@ Supremacy 1914 — 單日快照擷取器 (unified extractor).
   透過 Chrome DevTools Protocol (CDP) 連上正在遊玩的 Supremacy 1914 分頁，
   在遊戲 iframe 的執行環境內讀取 hup.gameState，一次性撈出：
     玩家 / 戰鬥統計 / 外交關係 / 聯盟(含分數) / 玩家分數 / 領地數
-  並寫入 games/{gameID}/data/day_{N}.json（gameID = 對局編號，N = 遊戲日，非真實日），
-  同時蓋上 reportedAt 時間戳。寫完後自動呼叫 build_dashboard.py 重建儀表盤。
+  並寫入 games/{gameID}/data/：同一遊戲日的首次報告為基準檔 day_{N}.json（納入趨勢/變化，並觸發儀表盤重建）；
+同日後續報告加時間戳另存為 day_{N}_{YYYYMMDD_HHMMSS}.json（額外報告，不覆蓋基準、不進趨勢、不重建）。
 
 前置條件：
   1. 遊戲已在 Chrome 中開啟並登入（網址含 supremacy1914.com/game）。
@@ -22,7 +22,8 @@ Supremacy 1914 — 單日快照擷取器 (unified extractor).
   python extract_day.py            # 擷取當前遊戲日並重建儀表盤
   python extract_day.py --no-build # 只擷取，不重建儀表盤
 
-同一遊戲日重跑會直接覆寫 games/{gameID}/data/day_{N}.json（不另存時間版本）；
+同一遊戲日首次擷取寫入 day_{N}.json（基準，納入趨勢/變化）；
+同日再次擷取不覆蓋，改存 day_{N}_{YYYYMMDD_HHMMSS}.json（額外報告，不進趨勢）。
 真實擷取時刻記錄在檔案的 reportedAt 欄位。
 """
 import asyncio
@@ -291,37 +292,48 @@ async def _run(no_build: bool):
         game_dir = os.path.join(GAMES_DIR, game_id)
         data_dir = os.path.join(game_dir, "data")
         os.makedirs(data_dir, exist_ok=True)
-        out_path = os.path.join(data_dir, f"day_{day}.json")
+        canonical_path = os.path.join(data_dir, f"day_{day}.json")
+        # 當日首次報告 → 寫入 day_{N}.json（基準，納入趨勢/變化）；
+        # 同日後續報告 → 加時間戳另存為額外報告，不覆蓋基準、不進趨勢。
+        is_first = not os.path.exists(canonical_path)
+        if is_first:
+            out_path = canonical_path
+            action = "當日首次報告（基準）"
+        else:
+            ts = datetime.now(tz).strftime("%Y%m%d_%H%M%S")
+            out_path = os.path.join(data_dir, f"day_{day}_{ts}.json")
+            action = "額外報告（加時間戳，不納入趨勢/變化）"
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(raw, f, ensure_ascii=False, indent=2)
 
         pc = raw.get("provinceCounts", {})
-        print(f"[OK] 寫入 {out_path}")
+        print(f"[OK] 寫入 {out_path}  [{action}]")
         print(f"  對局={game_id} · 遊戲日={day} · 玩家={len(raw.get('players', []))} · "
               f"統計={len(raw.get('playerStats', {}))} · 聯盟={len(raw.get('coalitions', []))} · "
               f"領地記錄={len(pc)}")
 
-        # 3.5) 寫入對局 meta（切日鐘點 + 我的 ID，供自動化排程與「我」標註使用）
-        start_info = raw.get("startInfo", {})
-        switch_clock = parse_switch_clock(start_info) or SWITCH_FALLBACK
-        if switch_clock == SWITCH_FALLBACK and start_info:
-            print(f"[WARN] 無法從 GameInfo 推算切日鐘點，暫用預設 {SWITCH_FALLBACK}（不正確可在 games/{game_id}/meta.json 手調）。")
-        my_id = raw.get("myIdCandidate")
-        if my_id is None:
-            my_id = int(os.environ.get("MY_ID", 22))
-        meta = {
-            "gameID": game_id,
-            "switchClock": switch_clock,
-            "myID": my_id,
-            "lastDay": day,
-            "updatedAt": raw.get("reportedAt"),
-        }
-        with open(os.path.join(game_dir, "meta.json"), "w", encoding="utf-8") as mf:
-            json.dump(meta, mf, ensure_ascii=False, indent=2)
-        print(f"[OK] 對局 meta：切日鐘點={switch_clock} · 我的ID={my_id}")
+        # 3.5) 僅「當日首次報告」寫入對局 meta（切日鐘點 + 我的 ID），供自動化排程與「我」標註使用
+        if is_first:
+            start_info = raw.get("startInfo", {})
+            switch_clock = parse_switch_clock(start_info) or SWITCH_FALLBACK
+            if switch_clock == SWITCH_FALLBACK and start_info:
+                print(f"[WARN] 無法從 GameInfo 推算切日鐘點，暫用預設 {SWITCH_FALLBACK}（不正確可在 games/{game_id}/meta.json 手調）。")
+            my_id = raw.get("myIdCandidate")
+            if my_id is None:
+                my_id = int(os.environ.get("MY_ID", 22))
+            meta = {
+                "gameID": game_id,
+                "switchClock": switch_clock,
+                "myID": my_id,
+                "lastDay": day,
+                "updatedAt": raw.get("reportedAt"),
+            }
+            with open(os.path.join(game_dir, "meta.json"), "w", encoding="utf-8") as mf:
+                json.dump(meta, mf, ensure_ascii=False, indent=2)
+            print(f"[OK] 對局 meta：切日鐘點={switch_clock} · 我的ID={my_id}")
 
-        # 4) 重建儀表盤
-        if not no_build:
+        # 4) 重建儀表盤（僅當日首次報告才重建；額外報告不影響趨勢與圖表）
+        if is_first and not no_build:
             if not os.path.exists(OUT_PY):
                 print("[WARN] 找不到 build_dashboard.py，跳過自動重建。")
             else:
@@ -330,6 +342,8 @@ async def _run(no_build: bool):
                     subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
                 except subprocess.CalledProcessError as e:
                     print(f"[WARN] 儀表盤重建失敗：{e}")
+        elif not is_first:
+            print(f"[INFO] 額外報告不重建儀表盤（基準 day_{day}.json 未變動）。")
         return True
 
 

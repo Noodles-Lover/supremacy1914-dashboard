@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import glob
+import re
 
 try:
     sys.stdout.reconfigure(encoding="utf-8")
@@ -100,6 +101,8 @@ def build_payload(day_data, my_id=None):
         for trg, rt in rels.items():
             t = player_lookup.get(int(trg))
             if not t or int(trg) == p["id"]:
+                continue
+            if t.get("ai"):   # 跳過非人類（AI）玩家，外交關係只列人類
                 continue
             if rt == 4:
                 allies.append(t)
@@ -214,7 +217,12 @@ GAMES = {}
 GAME_ORDER = []
 for game_dir in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
     gid = os.path.basename(game_dir)
-    day_files = sorted(glob.glob(os.path.join(game_dir, "data", "day_*.json")))
+    # 僅納入「當日首次報告」的基準檔 day_{N}.json；
+    # 同日額外報告 day_{N}_{時間戳}.json 不進趨勢/變化，故排除。
+    day_files = sorted(
+        f for f in glob.glob(os.path.join(game_dir, "data", "day_*.json"))
+        if re.match(r"day_\d+\.json$", os.path.basename(f))
+    )
     if not day_files:
         continue
     meta = load_meta(gid)

@@ -11,3 +11,6 @@ __pycache__/
 node_modules/
 _check.js
 automation.log
+
+# 同日額外報告（加時間戳）不納入版本控制，僅保留基準 day_{N}.json
+games/*/data/day_*_*.json
