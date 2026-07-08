@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Supremacy 1914 — 每日自動化腳本（由 Windows 工作排程器於「切日鐘點 + 5 分」觸發）。
+Supremacy 1914 — 每日自動化腳本（由 Windows 工作排程器於 automation.json 設定的時間觸發）。
 
 流程：
-  1. 重試連線遊戲分頁（最長 2 小時，每 15 分鐘一次），直到擷取成功。
+  1. 重試連線遊戲分頁並擷取，直到確認「遊戲日真的推進到新的一天」才提交
+     （預設每 10 分重試、窗口 4 小時，皆可在 automation.json 調整）。
      —— 遊戲分頁必須開著才能經 CDP 讀取資料，關閉時天然無法擷取，
         故採「固定鐘點排程 + 有限重試」而非 24h 全天候輪詢。
-  2. 擷取成功後由 extract_day.py 自動重建儀表盤。
+     —— 不依賴精確切日鐘點：即使排程早/晚幾小時，只要在窗口內偵測到 day 遞增就提交。
+  2. 擷取成功且遊戲日遞增後，由 extract_day.py 自動重建儀表盤。
   3. 提交並推送 main；GitHub Actions 偵測 push 後自動部署到 gh-pages。
-  4. 檢查新對局的切日鐘點是否與現有排程不同，必要時重註冊工作排程。
+  4. 若 automation.json 的排程時間與現有工作排程不同，重新註冊（使用者改時間後重跑 setup 即生效）。
 
 前置：setup_automation.py 已執行過一次（註冊排程 + 設定 git 憑證）。
 """
@@ -31,6 +33,34 @@ except Exception:
     pass
 
 
+CONFIG_PATH = os.path.join(BASE, "automation.json")
+
+
+def load_config():
+    cfg = {"scheduleTime": "17:05", "retryMinutes": 10, "retryWindowHours": 4}
+    try:
+        if os.path.exists(CONFIG_PATH):
+            with open(CONFIG_PATH, encoding="utf-8") as f:
+                cfg.update(json.load(f))
+    except Exception:
+        pass
+    return cfg
+
+
+def max_day_in_games():
+    """回傳所有對局中最大的遊戲日，用於判斷是否真的切到新的一天。"""
+    best = 0
+    for fp in glob.glob(os.path.join(BASE, "games", "*", "data", "day_*.json")):
+        try:
+            d = json.load(open(fp, encoding="utf-8"))
+            day = d.get("day")
+            if isinstance(day, int) and day > best:
+                best = day
+        except Exception:
+            pass
+    return best
+
+
 def log(m):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] {m}", flush=True)
@@ -50,50 +80,53 @@ def git(*args):
 
 
 def reregister_if_needed():
-    """若新對局的切日鐘點與現有排程不同，重新註冊工作排程（換對局時自動校正）。"""
+    """若 automation.json 的排程時間與現有工作排程不同，重新註冊（使用者改時間後重跑 setup 即生效）。"""
     try:
-        games_dir = os.path.join(BASE, "games")
-        meta_paths = []
-        for gid in os.listdir(games_dir):
-            mp = os.path.join(games_dir, gid, "meta.json")
-            if os.path.exists(mp):
-                meta_paths.append(mp)
-        if not meta_paths:
-            return
-        latest = max(meta_paths, key=os.path.getmtime)
-        meta = json.load(open(latest, encoding="utf-8"))
-        sc = meta.get("switchClock")
-        if not sc:
-            return
+        cfg = load_config()
+        st = cfg.get("scheduleTime", "17:05")
         out = subprocess.run(["schtasks", "/Query", "/TN", "Supremacy1914Daily", "/FO", "LIST"],
                              capture_output=True, text=True)
         cur = None
         for line in out.stdout.splitlines():
-            if "起始時間" in line or "Start Time" in line:
+            if "Start Time" in line:
                 parts = line.split(":", 1)
                 if len(parts) == 2:
                     cur = parts[1].strip()[-5:]  # HH:MM
-        if cur and cur != sc:
-            st = (datetime.datetime.strptime(sc, "%H:%M") + datetime.timedelta(minutes=5)).strftime("%H:%M")
+        if cur and cur != st:
             subprocess.run(["schtasks", "/Create", "/TN", "Supremacy1914Daily",
                             "/TR", f'cmd /c "{os.path.join(BASE, "runner.bat")}"',
                             "/SC", "DAILY", "/ST", st, "/F"], capture_output=True, text=True)
-            log(f"偵測到新對局切日鐘點 {sc}，已重註冊排程為 {st}。")
+            log(f"偵測到 automation.json 排程時間 {st} 與現有 {cur} 不同，已重註冊排程。")
     except Exception as e:
         log(f"排程重註冊檢查失敗（可忽略）：{e}")
 
 
 def main():
-    deadline = time.time() + 2 * 3600  # 2 小時重試窗口
-    ok = False
+    cfg = load_config()
+    retry_min = int(cfg.get("retryMinutes", 10))
+    window_h = float(cfg.get("retryWindowHours", 4))
+    deadline = time.time() + window_h * 3600
+    prev_day = max_day_in_games()
+    log(f"上次遊戲日 = {prev_day or '未知'}；開始擷取（每 {retry_min} 分重試，窗口 {window_h}h）…")
+    advanced = False
     while time.time() < deadline:
         if run_extract():
-            ok = True
-            break
-        log("遊戲分頁尚未就緒，15 分鐘後重試…")
-        time.sleep(15 * 60)
-    if not ok:
-        log("2 小時內皆無法連上遊戲分頁，今日跳過（明日排程再試）。")
+            new_day = max_day_in_games()
+            if prev_day and new_day > prev_day:
+                advanced = True
+                log(f"偵測到遊戲日推進 {prev_day} → {new_day}，準備提交。")
+                break
+            if new_day == prev_day:
+                log(f"遊戲日仍為 {new_day}（尚未切到新的一天），{retry_min} 分後重試…")
+            else:
+                advanced = True
+                log(f"遊戲日 = {new_day}，準備提交。")
+                break
+        else:
+            log(f"遊戲分頁尚未就緒，{retry_min} 分後重試…")
+        time.sleep(retry_min * 60)
+    if not advanced:
+        log("窗口內皆未取得新的一天，今日跳過（明日排程再試）。")
         sys.exit(2)
 
     reregister_if_needed()

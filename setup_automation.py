@@ -6,8 +6,8 @@ Supremacy 1914 — 一次性自動化設定（僅需執行一次）。
   1. 確保 games/{gameID}/meta.json 存在並含 switchClock（切日鐘點）。
      若遊戲分頁當下開著 → 即時擷取取得；否則用預設 17:00（遊戲開啟後重跑本腳本會自動校正）。
   2. 用 Windows 工作排程器（schtasks）註冊每日工作 Supremacy1914Daily，
-     於「切日鐘點 + 5 分」執行 runner.bat（→ run_daily.py）。
-  3. 若環境變數 GITHUB_PAT 已設定，將其寫入 git credential store，
+     執行 runner.bat（→ run_daily.py）。排程時間取自 automation.json 的 scheduleTime（預設 17:05，可手動編輯）。
+  3. 若環境變數 GITHUB_PAT 已設定，將其寫入本倉庫 .git/config 的 remote URL，
      使每日推送 main 無需互動（GitHub Actions 才會自動部署）。
 
 用法：
@@ -39,7 +39,21 @@ def log(m):
 def main():
     games_dir = os.path.join(BASE, "games")
 
-    # 1) 取得 switchClock
+    # 0) 讀取自動化設定（使用者可手動編輯 automation.json 調整排程時間 / 重試參數）
+    cfg_path = os.path.join(BASE, "automation.json")
+    cfg = {"scheduleTime": "17:05", "retryMinutes": 10, "retryWindowHours": 4}
+    if os.path.exists(cfg_path):
+        try:
+            with open(cfg_path, encoding="utf-8") as f:
+                cfg.update(json.load(f))
+        except Exception:
+            pass
+    else:
+        with open(cfg_path, "w", encoding="utf-8") as f:
+            json.dump(cfg, f, ensure_ascii=False, indent=2)
+        log(f"[OK] 已建立 automation.json（預設排程 {cfg['scheduleTime']}，可手動編輯後重跑本腳本生效）。")
+
+    # 1) 確保 meta.json 存在（遊戲開著則即時擷取；否則用預設，日後重跑自動校正）
     meta = None
     if os.path.isdir(games_dir):
         for gid in os.listdir(games_dir):
@@ -47,27 +61,23 @@ def main():
             if os.path.exists(mp):
                 meta = json.load(open(mp, encoding="utf-8"))
                 break
-    switch = meta.get("switchClock") if meta else None
-
-    if not switch:
-        log("[..] 嘗試即時擷取以取得切日鐘點…")
+    if not meta:
+        log("[..] 嘗試即時擷取以建立 meta.json（含 switchClock / 我的 ID）…")
         try:
-            r = subprocess.run([VENV_PY, EXTRACT, "--no-build"], cwd=BASE)
-            if r.returncode == 0 and os.path.isdir(games_dir):
+            subprocess.run([VENV_PY, EXTRACT, "--no-build"], cwd=BASE)
+            if os.path.isdir(games_dir):
                 for gid in os.listdir(games_dir):
                     mp = os.path.join(games_dir, gid, "meta.json")
                     if os.path.exists(mp):
                         meta = json.load(open(mp, encoding="utf-8"))
-                        switch = meta.get("switchClock")
                         break
         except Exception as e:
             log(f"[WARN] 即時擷取失敗：{e}")
-        if not switch:
-            switch = "17:00"
-            log(f"[WARN] 無法即時取得切日鐘點，使用預設 {switch}（遊戲開啟後重跑本腳本可自動校正）。")
+        if not meta:
+            log("[WARN] 無法建立 meta.json（遊戲未開）。排程仍會註冊；開遊戲後重跑本腳本可補建。")
 
-    st = (datetime.datetime.strptime(switch, "%H:%M") + datetime.timedelta(minutes=5)).strftime("%H:%M")
-    log(f"排程時間：每日 {st}（切日 {switch} + 5 分）")
+    st = cfg.get("scheduleTime", "17:05")
+    log(f"排程時間：每日 {st}（來源：automation.json 手動設定）")
 
     # 2) 註冊 Windows 工作排程器
     task = ["schtasks", "/Create", "/TN", "Supremacy1914Daily",
