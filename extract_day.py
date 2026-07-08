@@ -6,8 +6,8 @@ Supremacy 1914 — 單日快照擷取器 (unified extractor).
   透過 Chrome DevTools Protocol (CDP) 連上正在遊玩的 Supremacy 1914 分頁，
   在遊戲 iframe 的執行環境內讀取 hup.gameState，一次性撈出：
     玩家 / 戰鬥統計 / 外交關係 / 聯盟(含分數) / 玩家分數 / 領地數
-  並寫入 data/day_{N}.json（N = 遊戲日，非真實日），同時蓋上 reportedAt 時間戳。
-  寫完後自動呼叫 build_dashboard.py 重建儀表盤。
+  並寫入 games/{gameID}/data/day_{N}.json（gameID = 對局編號，N = 遊戲日，非真實日），
+  同時蓋上 reportedAt 時間戳。寫完後自動呼叫 build_dashboard.py 重建儀表盤。
 
 前置條件：
   1. 遊戲已在 Chrome 中開啟並登入（網址含 supremacy1914.com/game）。
@@ -22,7 +22,7 @@ Supremacy 1914 — 單日快照擷取器 (unified extractor).
   python extract_day.py            # 擷取當前遊戲日並重建儀表盤
   python extract_day.py --no-build # 只擷取，不重建儀表盤
 
-同一遊戲日重跑會直接覆寫 data/day_{N}.json（不另存時間版本）；
+同一遊戲日重跑會直接覆寫 games/{gameID}/data/day_{N}.json（不另存時間版本）；
 真實擷取時刻記錄在檔案的 reportedAt 欄位。
 """
 import asyncio
@@ -34,7 +34,7 @@ import urllib.request
 from datetime import datetime, timezone, timedelta
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE, "data")
+GAMES_DIR = os.path.join(BASE, "games")
 OUT_PY = os.path.join(BASE, "build_dashboard.py")
 
 try:
@@ -162,9 +162,12 @@ async def _run(no_build: bool):
     # 1) 找到遊戲分頁
     resp = urllib.request.urlopen("http://127.0.0.1:9222/json", timeout=10)
     targets = json.loads(resp.read())
-    page = next((t for t in targets
-                 if t.get("type") == "page"
-                 and "supremacy1914.com/game" in t.get("url", "")), None)
+    # 優先選擇網址含 gameID 的遊戲分頁
+    candidates = [t for t in targets
+                  if t.get("type") == "page"
+                  and "supremacy1914.com/game" in t.get("url", "")]
+    page = next((t for t in candidates
+                 if "gameID=" in t.get("url", "")), None) or (candidates[0] if candidates else None)
     if not page:
         page = next((t for t in targets
                      if t.get("type") == "page"
@@ -172,6 +175,15 @@ async def _run(no_build: bool):
     if not page:
         print("[ERR] 找不到 Supremacy 1914 遊戲分頁。請確認遊戲已開啟且 Chrome 已啟用遠端除錯。")
         return
+
+    # 從網址解析 gameID（對局編號）
+    import re
+    m = re.search(r"gameID=(\d+)", page.get("url", ""))
+    if not m:
+        print("[ERR] 無法從網址解析 gameID（對局編號）。請確認網址含 gameID= 參數。")
+        return
+    game_id = m.group(1)
+    print(f"[OK] 偵測到對局 gameID={game_id}")
     ws_url = page["webSocketDebuggerUrl"]
 
     async with websockets.connect(ws_url, max_size=80_000_000) as ws:
@@ -222,23 +234,26 @@ async def _run(no_build: bool):
             print("[ERR] 擷取失敗：", raw["__error__"])
             return
 
-        # 3) 蓋時間戳並寫檔
+        # 3) 蓋時間戳、標註 gameID 並寫檔（按對局分資料夾）
         tz = timezone(timedelta(hours=8))
         raw["reportedAt"] = datetime.now(tz).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+        raw["gameID"] = game_id
 
         day = raw.get("day")
         if day is None:
             print("[ERR] 無法取得遊戲日（day 為空），中止寫檔。")
             return
 
-        os.makedirs(DATA_DIR, exist_ok=True)
-        out_path = os.path.join(DATA_DIR, f"day_{day}.json")
+        game_dir = os.path.join(GAMES_DIR, game_id)
+        data_dir = os.path.join(game_dir, "data")
+        os.makedirs(data_dir, exist_ok=True)
+        out_path = os.path.join(data_dir, f"day_{day}.json")
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(raw, f, ensure_ascii=False, indent=2)
 
         pc = raw.get("provinceCounts", {})
         print(f"[OK] 寫入 {out_path}")
-        print(f"  遊戲日={day} · 玩家={len(raw.get('players', []))} · "
+        print(f"  對局={game_id} · 遊戲日={day} · 玩家={len(raw.get('players', []))} · "
               f"統計={len(raw.get('playerStats', {}))} · 聯盟={len(raw.get('coalitions', []))} · "
               f"領地記錄={len(pc)}")
 

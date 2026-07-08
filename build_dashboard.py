@@ -1,16 +1,23 @@
 # -*- coding: utf-8 -*-
-"""Supremacy 1914 — 多日戰況面板 (v9, 繁體中文, 作戰指揮室風格).
+"""Supremacy 1914 — 多對局 / 多日戰況面板 (v9.5, 繁體中文, 作戰指揮室風格).
 
-讀取 data/day_{N}.json（按「遊戲日」儲存，非真實日），
-將所有天數內嵌進 JS，提供遊戲日切換器。
+讀取 games/{gameID}/data/day_{N}.json（按「對局」分資料夾、按「遊戲日」儲存，非真實日），
+將所有對局與天數內嵌進 JS，提供「對局切換器」+「遊戲日切換器」。
 """
 import json
 import os
+import sys
 import glob
 
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 BASE = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE, "data")
-MY_ID = 22
+GAMES_DIR = os.path.join(BASE, "games")
+MY_ID = int(os.environ.get("MY_ID", 22))
 TOP = 15
 TOP_KDA = 10
 
@@ -190,19 +197,45 @@ def build_payload(day_data):
     return payload
 
 
-# ── Load all days ──
-day_files = sorted(glob.glob(os.path.join(DATA_DIR, "day_*.json")))
-DAYS = {}
-DAY_ORDER = []
-for df in day_files:
-    dd = load_day(df)
-    day_num = dd.get("day")
-    DAYS[str(day_num)] = build_payload(dd)
-    DAY_ORDER.append(day_num)
-DAY_ORDER.sort()
+# ── Load all games & days ──
+GAMES = {}
+GAME_ORDER = []
+for game_dir in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
+    gid = os.path.basename(game_dir)
+    day_files = sorted(glob.glob(os.path.join(game_dir, "data", "day_*.json")))
+    if not day_files:
+        continue
+    days = {}
+    order = []
+    for df in day_files:
+        dd = load_day(df)
+        day_num = dd.get("day")
+        if day_num is None:
+            continue
+        days[str(day_num)] = build_payload(dd)
+        order.append(day_num)
+    if not order:
+        continue
+    order.sort()
+    GAMES[gid] = {"gameID": gid, "days": days, "order": order}
 
-days_json = json.dumps(DAYS, ensure_ascii=False)
-order_json = json.dumps(DAY_ORDER)
+# 對局排序：依 gameID 數值升序（穩定、可預期）
+def _gid_key(g):
+    return int(g) if g.isdigit() else g
+GAME_ORDER = sorted(GAMES.keys(), key=_gid_key)
+
+if not GAMES:
+    out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write("<!DOCTYPE html><html lang='zh-Hant'><head><meta charset='UTF-8'>"
+                "<title>尚無資料</title></head><body style='background:#0c0f16;color:#e7e9ee;"
+                "font-family:sans-serif;padding:48px'><h1>尚無對局資料</h1>"
+                "<p>請先執行 <code>python extract_day.py</code> 擷取遊戲數據。</p></body></html>")
+    print("[WARN] 找不到任何 games/*/data/day_*.json，僅輸出空白提示頁。")
+    raise SystemExit(0)
+
+games_json = json.dumps(GAMES, ensure_ascii=False)
+gorder_json = json.dumps(GAME_ORDER)
 
 TEMPLATE = r"""<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -249,6 +282,7 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .brand h1 span{color:var(--accent);}
 .brand .sub{color:var(--dim);font-size:0.85rem;margin-top:6px;letter-spacing:0.3px;}
 .day-control{display:flex;align-items:center;gap:12px;}
+.controls{display:flex;flex-direction:column;gap:11px;align-items:flex-end;}
 .day-label{font-size:0.78rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
 .day-pills{display:flex;gap:6px;flex-wrap:wrap;}
 .day-pill{
@@ -421,9 +455,15 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
     <h1>Supremacy <span>1914</span> · 戰況面板</h1>
     <p class="sub" id="subHeader"></p>
   </div>
-  <div class="day-control">
-    <span class="day-label">遊戲日</span>
-    <div class="day-pills" id="dayPills"></div>
+  <div class="controls">
+    <div class="day-control">
+      <span class="day-label">對局</span>
+      <div class="day-pills" id="gamePills"></div>
+    </div>
+    <div class="day-control">
+      <span class="day-label">遊戲日</span>
+      <div class="day-pills" id="dayPills"></div>
+    </div>
   </div>
 </header>
 
@@ -502,9 +542,12 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 </div>
 
 <script>
-const DAYS = __DAYS_JSON__;
-const DAY_ORDER = __ORDER_JSON__;
+const GAMES = __GAMES_JSON__;
+const GAME_ORDER = __GAME_ORDER_JSON__;
 const MY_ID = __MY_ID__;
+let currentGame = GAME_ORDER[GAME_ORDER.length-1];
+let DAYS = GAMES[currentGame].days;
+let DAY_ORDER = GAMES[currentGame].order;
 let currentDay = DAY_ORDER[DAY_ORDER.length-1];
 let currentRows = [];
 let sortCol = 4, sortAsc = false;
@@ -639,8 +682,9 @@ function render(day){
   const d=DAYS[day];
   const pDay=prevDayNum(day);
   const prevMe = pDay!==null ? DAYS[pDay].me : null;
-  document.getElementById('subHeader').textContent=`地圖：北美洲 · ${d.meta.playerCount} 名人類玩家 · 目標 ${d.meta.vp} 勝利點 · 報告時間 ${fmtTime(d.meta.reportedAt)}`;
-  document.getElementById('globalWhen').textContent=`遊戲日 ${d.meta.day} · 報告時間 ${fmtTime(d.meta.reportedAt)}`;
+  const gid = GAMES[currentGame].gameID;
+  document.getElementById('subHeader').textContent=`對局 #${gid} · 地圖：北美洲 · ${d.meta.playerCount} 名人類玩家 · 目標 ${d.meta.vp} 勝利點 · 報告時間 ${fmtTime(d.meta.reportedAt)}`;
+  document.getElementById('globalWhen').textContent=`對局 #${gid} · 遊戲日 ${d.meta.day} · 報告時間 ${fmtTime(d.meta.reportedAt)}`;
   document.getElementById('heroCard').innerHTML=heroHtml(d, prevMe);
   document.getElementById('dipCard').innerHTML=dipHtml(d);
   document.getElementById('allyIntel').innerHTML=allyHtml(d);
@@ -725,18 +769,48 @@ function buildTrendChart(){
   });
 }
 
-const pills=document.getElementById('dayPills');
-DAY_ORDER.forEach(day=>{
+// ── 對局切換 ──
+function rebuildDayPills(){
+  const pills=document.getElementById('dayPills');
+  pills.innerHTML='';
+  DAY_ORDER.forEach(day=>{
+    const b=document.createElement('button');
+    b.className='day-pill'; b.textContent=day;
+    b.onclick=()=>{ currentDay=day; render(day); };
+    pills.appendChild(b);
+  });
+}
+function rebuildTrendPlayer(){
+  const sel=document.getElementById('trendPlayer');
+  sel.innerHTML='';
+  const latestRows=DAYS[DAY_ORDER[DAY_ORDER.length-1]].tableRows.slice().sort((a,b)=>b.score-a.score);
+  latestRows.forEach(r=>{ const o=document.createElement('option'); o.value=r.id; o.textContent=`${r.name} (${r.nation})`; sel.appendChild(o); });
+  sel.value=String(MY_ID);
+}
+function setGame(gid){
+  currentGame=String(gid);
+  DAYS=GAMES[currentGame].days;
+  DAY_ORDER=GAMES[currentGame].order;
+  currentDay=DAY_ORDER[DAY_ORDER.length-1];
+  rebuildDayPills();
+  rebuildTrendPlayer();
+  render(currentDay);
+  buildTrendChart();
+  document.querySelectorAll('.game-pill').forEach(b=>b.classList.toggle('active', b.textContent===String(gid)));
+}
+
+// 建立對局選擇器
+const gp=document.getElementById('gamePills');
+GAME_ORDER.forEach(gid=>{
   const b=document.createElement('button');
-  b.className='day-pill'; b.textContent=day;
-  b.onclick=()=>{ currentDay=day; render(day); };
-  pills.appendChild(b);
+  b.className='day-pill game-pill'; b.textContent=gid;
+  b.onclick=()=>{ setGame(gid); };
+  gp.appendChild(b);
 });
-// trend player selector（從最新一日的人類玩家清單建立，預設選自己）
+// 建立日選擇器（初始對局）+ 趨勢玩家下拉
+rebuildDayPills();
 const sel=document.getElementById('trendPlayer');
-const latestRows=DAYS[DAY_ORDER[DAY_ORDER.length-1]].tableRows.slice().sort((a,b)=>b.score-a.score);
-latestRows.forEach(r=>{ const o=document.createElement('option'); o.value=r.id; o.textContent=`${r.name} (${r.nation})`; sel.appendChild(o); });
-sel.value=String(MY_ID);
+rebuildTrendPlayer();
 sel.onchange=()=>{ buildTrendChart(); };
 
 // 目錄跳轉：捲動時高亮當前章節
@@ -759,8 +833,8 @@ buildTrendChart();
 """
 
 html = (TEMPLATE
-        .replace("__DAYS_JSON__", days_json)
-        .replace("__ORDER_JSON__", order_json)
+        .replace("__GAMES_JSON__", games_json)
+        .replace("__GAME_ORDER_JSON__", gorder_json)
         .replace("__MY_ID__", str(MY_ID)))
 
 out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
@@ -768,7 +842,7 @@ with open(out_path, "w", encoding="utf-8") as f:
     f.write(html)
 
 print(f"[OK] {out_path} ({os.path.getsize(out_path)/1024:.1f} KB)")
-print(f"  Days available: {DAY_ORDER}")
-for dnum in DAY_ORDER:
-    d = DAYS[str(dnum)]
-    print(f"   Day {dnum}: players={d['meta']['playerCount']} me(score={d['me']['score']}, kills={d['me']['kills']}) coalitions={len(d['coalitions'])}")
+print(f"  Games available: {GAME_ORDER}")
+for gid in GAME_ORDER:
+    g = GAMES[gid]
+    print(f"   對局 {gid}: 天數={g['order']} · 最新日玩家數={g['days'][str(g['order'][-1])]['meta']['playerCount']}")
