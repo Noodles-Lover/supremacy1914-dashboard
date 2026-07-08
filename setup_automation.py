@@ -78,22 +78,19 @@ def main():
     else:
         log(f"[ERR] 註冊失敗：{res.stderr}\n可手動執行：{' '.join(task)}")
 
-    # 3) 設定 git 推送憑證（若提供 PAT）
+    # 3) 設定 git 推送憑證（若提供 PAT）。寫入本倉庫 .git/config 的 remote URL（僅本機，非使用者主目錄）。
     pat = os.environ.get("GITHUB_PAT")
     if pat:
-        cred = os.path.expanduser("~/.git-credentials")
-        line = f"https://__token__:{pat}@github.com\n"
-        existing = ""
-        if os.path.exists(cred):
-            existing = open(cred, encoding="utf-8").read()
-        if line not in existing:
-            with open(cred, "a", encoding="utf-8") as f:
-                f.write(line)
-        subprocess.run(["git", "config", "--global", "credential.helper", "store"], cwd=BASE)
-        log("[OK] 已設定 GitHub 推送憑證（PAT 存入 ~/.git-credentials，每日推送免互動）。")
-        log("     ⚠️ 建議確認自動化正常後到 GitHub 撤銷此 PAT（Settings → Developer settings → Tokens）。")
+        try:
+            url = f"https://__token__:{pat}@github.com/Noodles-Lover/supremacy1914-dashboard.git"
+            subprocess.run(["git", "remote", "set-url", "origin", url], cwd=BASE, check=True, capture_output=True, text=True)
+            log("[OK] 已將推送憑證嵌入本倉庫 remote URL（.git/config，每日推送免互動）。")
+            log("     ⚠️ 建議確認自動化正常後到 GitHub 撤銷此 PAT（Settings → Developer settings → Tokens）。")
+        except Exception as e:
+            log(f"[WARN] 無法自動設定推送憑證：{e}")
+            log("       請確保 git push origin main 可成功（手動推送一次或另行設定憑證），每日自動化才能推送。")
     else:
-        log("[INFO] 未設定 GITHUB_PAT 環境變數；若 git push 需互動，請設定後重跑本腳本。")
+        log("[INFO] 未設定 GITHUB_PAT；請確保 git push origin main 可成功，每日自動化才能推送並觸發部署。")
 
 
 if __name__ == "__main__":
