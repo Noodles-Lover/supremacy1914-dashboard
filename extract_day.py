@@ -147,15 +147,59 @@ EXTRACT_JS = r"""
       }
     }
 
+    // 對局開始時間（推算切日鐘點）與本地玩家 ID（自動標註「我」）
+    var startInfo = {};
+    if (gid) {
+      ['startDate','startTime','start','startTimeStamp','createdAt','gameStartDate','matchStart'].forEach(function(k){
+        if (gid[k] !== undefined && gid[k] !== null) startInfo[k] = gid[k];
+      });
+    }
+    var myIdCandidate = null;
+    for (var i=0;i<players.length;i++){ var pp=players[i]; if(pp.me===true||pp.isMe===true||pp.localPlayer===true){ myIdCandidate=pp.id; break; } }
+    if (myIdCandidate==null){ try{ if(hup.localPlayerID!=null) myIdCandidate=hup.localPlayerID; }catch(e){} try{ if(hup.gameState&&hup.gameState.localPlayerID!=null) myIdCandidate=hup.gameState.localPlayerID; }catch(e){} }
+
     return JSON.stringify({
       day: day, victoryPoints: vp, players: players, playerStats: stats,
-      relations: relations, coalitions: coal, scores: scores, provinceCounts: pc
+      relations: relations, coalitions: coal, scores: scores, provinceCounts: pc,
+      startInfo: startInfo, myIdCandidate: myIdCandidate
     });
   } catch(e){
     return JSON.stringify({__error__: e.message, stack: (e.stack||'')});
   }
 })()
 """
+
+
+def parse_switch_clock(start_info):
+    """從 GameInfo 的開始時間欄位推算每日切日的本地鐘點 (HH:MM)。失敗回傳 None。"""
+    if not isinstance(start_info, dict):
+        return None
+    for k, v in start_info.items():
+        # 數值型：視為 epoch（秒或毫秒）
+        if isinstance(v, (int, float)) and not isinstance(v, bool):
+            s = v / 1000.0 if v > 1e11 else v
+            try:
+                dt = datetime.fromtimestamp(s)
+                return f"{dt.hour:02d}:{dt.minute:02d}"
+            except Exception:
+                pass
+        if isinstance(v, str):
+            s2 = v.strip()
+            # 僅當含時間成分（':' 或 'T'）才視為可推算；純日期無法取得鐘點
+            if (":" in s2) or ("T" in s2):
+                for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S",
+                            "%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M",
+                            "%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S.%f%z",
+                            "%Y-%m-%dT%H:%M:%S%z"):
+                    try:
+                        dt = datetime.strptime(s2, fmt)
+                        return f"{dt.hour:02d}:{dt.minute:02d}"
+                    except Exception:
+                        pass
+    return None
+
+
+SWITCH_FALLBACK = "17:00"  # 無法自動推算時的預設切日鐘點（本對局已知約 17:00）
 
 
 async def _run(no_build: bool):
@@ -174,14 +218,14 @@ async def _run(no_build: bool):
                      and "supremacy1914" in t.get("url", "")), None)
     if not page:
         print("[ERR] 找不到 Supremacy 1914 遊戲分頁。請確認遊戲已開啟且 Chrome 已啟用遠端除錯。")
-        return
+        return False
 
     # 從網址解析 gameID（對局編號）
     import re
     m = re.search(r"gameID=(\d+)", page.get("url", ""))
     if not m:
         print("[ERR] 無法從網址解析 gameID（對局編號）。請確認網址含 gameID= 參數。")
-        return
+        return False
     game_id = m.group(1)
     print(f"[OK] 偵測到對局 gameID={game_id}")
     ws_url = page["webSocketDebuggerUrl"]
@@ -214,7 +258,7 @@ async def _run(no_build: bool):
                 break
         if game_ctx is None:
             print("[ERR] 在頁面執行環境中找不到 hup（遊戲可能還在載入，請稍候重試）。")
-            return
+            return False
 
         async def eg(js):
             r = await send("Runtime.evaluate", {
@@ -232,7 +276,7 @@ async def _run(no_build: bool):
             raw = json.loads(raw)
         if isinstance(raw, dict) and raw.get("__error__"):
             print("[ERR] 擷取失敗：", raw["__error__"])
-            return
+            return False
 
         # 3) 蓋時間戳、標註 gameID 並寫檔（按對局分資料夾）
         tz = timezone(timedelta(hours=8))
@@ -242,7 +286,7 @@ async def _run(no_build: bool):
         day = raw.get("day")
         if day is None:
             print("[ERR] 無法取得遊戲日（day 為空），中止寫檔。")
-            return
+            return False
 
         game_dir = os.path.join(GAMES_DIR, game_id)
         data_dir = os.path.join(game_dir, "data")
@@ -257,26 +301,48 @@ async def _run(no_build: bool):
               f"統計={len(raw.get('playerStats', {}))} · 聯盟={len(raw.get('coalitions', []))} · "
               f"領地記錄={len(pc)}")
 
+        # 3.5) 寫入對局 meta（切日鐘點 + 我的 ID，供自動化排程與「我」標註使用）
+        start_info = raw.get("startInfo", {})
+        switch_clock = parse_switch_clock(start_info) or SWITCH_FALLBACK
+        if switch_clock == SWITCH_FALLBACK and start_info:
+            print(f"[WARN] 無法從 GameInfo 推算切日鐘點，暫用預設 {SWITCH_FALLBACK}（不正確可在 games/{game_id}/meta.json 手調）。")
+        my_id = raw.get("myIdCandidate")
+        if my_id is None:
+            my_id = int(os.environ.get("MY_ID", 22))
+        meta = {
+            "gameID": game_id,
+            "switchClock": switch_clock,
+            "myID": my_id,
+            "lastDay": day,
+            "updatedAt": raw.get("reportedAt"),
+        }
+        with open(os.path.join(game_dir, "meta.json"), "w", encoding="utf-8") as mf:
+            json.dump(meta, mf, ensure_ascii=False, indent=2)
+        print(f"[OK] 對局 meta：切日鐘點={switch_clock} · 我的ID={my_id}")
+
         # 4) 重建儀表盤
         if not no_build:
             if not os.path.exists(OUT_PY):
                 print("[WARN] 找不到 build_dashboard.py，跳過自動重建。")
-                return
-            print("[..] 重建儀表盤…")
-            try:
-                subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"[WARN] 儀表盤重建失敗：{e}")
+            else:
+                print("[..] 重建儀表盤…")
+                try:
+                    subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"[WARN] 儀表盤重建失敗：{e}")
+        return True
 
 
 def main():
     no_build = "--no-build" in sys.argv
+    ok = False
     try:
-        asyncio.run(_run(no_build))
+        ok = asyncio.run(_run(no_build)) or False
     except urllib.error.URLError:
         print("[ERR] 無法連線 127.0.0.1:9222。請確認 Chrome 已以 --remote-debugging-port=9222 啟動。")
     except Exception as e:
         print(f"[ERR] 未預期錯誤：{e}")
+    sys.exit(0 if ok else 1)
 
 
 if __name__ == "__main__":

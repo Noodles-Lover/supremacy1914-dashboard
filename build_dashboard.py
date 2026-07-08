@@ -37,6 +37,16 @@ def load_day(path):
         return json.load(f)
 
 
+def load_meta(gid):
+    p = os.path.join(GAMES_DIR, gid, "meta.json")
+    if os.path.exists(p):
+        try:
+            return json.load(open(p, encoding="utf-8"))
+        except Exception:
+            return {}
+    return {}
+
+
 def pid_nationname(player_lookup, pid):
     p = player_lookup.get(pid)
     if p:
@@ -44,7 +54,8 @@ def pid_nationname(player_lookup, pid):
     return f"玩家 {pid}"
 
 
-def build_payload(day_data):
+def build_payload(day_data, my_id=None):
+    my_id = my_id if my_id is not None else MY_ID
     players = day_data.get("players", [])
     player_lookup = {p["id"]: p for p in players}
     stats_src = day_data.get("playerStats", {})
@@ -104,7 +115,8 @@ def build_payload(day_data):
 
     all_human = [player_row(p) for p in players if not p["ai"] and p["id"] != 0]
     all_human.sort(key=lambda r: r["score"], reverse=True)
-    me = player_row(player_lookup[MY_ID])
+    me = player_lookup.get(my_id)
+    me = player_row(me) if me else player_row(all_human[0])
 
     my_ally_ids = {a["id"] for a in me["allies"]}
     my_allies = [r for r in all_human if r["id"] in my_ally_ids]
@@ -157,7 +169,7 @@ def build_payload(day_data):
             "kda": r["kda"], "kdaCls": kda_cls(r["kda"]),
             "captured": r["captured"], "lost": r["lost"], "provinces": r["provinces"],
             "enemies": ", ".join([f'{e["nation"]} ({e["name"]})' for e in r["enemies"]]),
-            "isMe": r["id"] == MY_ID,
+            "isMe": r["id"] == my_id,
         })
 
     payload = {
@@ -205,6 +217,8 @@ for game_dir in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
     day_files = sorted(glob.glob(os.path.join(game_dir, "data", "day_*.json")))
     if not day_files:
         continue
+    meta = load_meta(gid)
+    my_id = meta.get("myID", int(os.environ.get("MY_ID", 22)))
     days = {}
     order = []
     for df in day_files:
@@ -212,17 +226,18 @@ for game_dir in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
         day_num = dd.get("day")
         if day_num is None:
             continue
-        days[str(day_num)] = build_payload(dd)
+        days[str(day_num)] = build_payload(dd, my_id)
         order.append(day_num)
     if not order:
         continue
     order.sort()
-    GAMES[gid] = {"gameID": gid, "days": days, "order": order}
+    GAMES[gid] = {"gameID": gid, "days": days, "order": order, "myID": my_id}
 
 # 對局排序：依 gameID 數值升序（穩定、可預期）
 def _gid_key(g):
     return int(g) if g.isdigit() else g
 GAME_ORDER = sorted(GAMES.keys(), key=_gid_key)
+MY_IDS = {gid: GAMES[gid].get("myID", 22) for gid in GAMES}
 
 if not GAMES:
     out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
@@ -544,7 +559,8 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 <script>
 const GAMES = __GAMES_JSON__;
 const GAME_ORDER = __GAME_ORDER_JSON__;
-const MY_ID = __MY_ID__;
+const MY_IDS = __MY_IDS_JSON__;
+let MY_ID = MY_IDS[currentGame] || 22;
 let currentGame = GAME_ORDER[GAME_ORDER.length-1];
 let DAYS = GAMES[currentGame].days;
 let DAY_ORDER = GAMES[currentGame].order;
@@ -789,6 +805,7 @@ function rebuildTrendPlayer(){
 }
 function setGame(gid){
   currentGame=String(gid);
+  MY_ID = MY_IDS[currentGame] || 22;
   DAYS=GAMES[currentGame].days;
   DAY_ORDER=GAMES[currentGame].order;
   currentDay=DAY_ORDER[DAY_ORDER.length-1];
@@ -835,7 +852,7 @@ buildTrendChart();
 html = (TEMPLATE
         .replace("__GAMES_JSON__", games_json)
         .replace("__GAME_ORDER_JSON__", gorder_json)
-        .replace("__MY_ID__", str(MY_ID)))
+        .replace("__MY_IDS_JSON__", json.dumps(MY_IDS, ensure_ascii=False)))
 
 out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
 with open(out_path, "w", encoding="utf-8") as f:

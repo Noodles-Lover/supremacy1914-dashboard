@@ -198,7 +198,7 @@
       "nation": "West Ontario",
       "team": 5,
       "color": "rgba(236,213,85,255)",
-      "capital": 2411,
+      "capital": -1,
       "ai": false,
       "defeated": false
     },
@@ -388,9 +388,9 @@
       "nation": "West Virginia",
       "team": 0,
       "color": "rgba(165,156,156,255)",
-      "capital": 1793,
+      "capital": -1,
       "ai": true,
-      "defeated": false
+      "defeated": true
     },
     {
       "id": 39,
@@ -660,7 +660,7 @@
       "color": "rgba(160,159,159,255)",
       "capital": -1,
       "ai": true,
-      "defeated": false
+      "defeated": true
     },
     {
       "id": 66,
@@ -738,7 +738,7 @@
       "nation": "Mississippi",
       "team": 0,
       "color": "rgba(94,242,247,255)",
-      "capital": 2015,
+      "capital": -1,
       "ai": false,
       "defeated": false
     },
@@ -746,7 +746,7 @@
       "id": 74,
       "name": "user44370627",
       "nation": "Louisiana",
-      "team": 0,
+      "team": 7,
       "color": "rgba(208,199,88,255)",
       "capital": 2009,
       "ai": false,
@@ -886,7 +886,7 @@
       "id": 88,
       "name": "Dyer511",
       "nation": "Chihuahua",
-      "team": 1,
+      "team": 0,
       "color": "rgba(234,175,81,255)",
       "capital": 2147,
       "ai": false,
@@ -956,7 +956,7 @@
       "id": 95,
       "name": "Unquietershark1",
       "nation": "South Mexico",
-      "team": 1,
+      "team": 0,
       "color": "rgba(58,186,77,255)",
       "capital": 2233,
       "ai": false,
@@ -1107,14 +1107,26 @@
     "1": {
       "provincesCaptured": 2,
       "provincesLost": 0,
-      "unit2killed": 25,
+      "unit2killed": 29,
       "unit2lost": 6
     },
     "3": {
       "provincesCaptured": 0,
       "provincesLost": 2,
       "unit2killed": 6,
-      "unit2lost": 25
+      "unit2lost": 29
+    },
+    "4": {
+      "provincesCaptured": 1,
+      "provincesLost": 0,
+      "unit2killed": 10,
+      "unit2lost": 2
+    },
+    "8": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
+      "unit2killed": 2,
+      "unit2lost": 10
     },
     "12": {
       "provincesCaptured": 2,
@@ -1123,9 +1135,9 @@
       "unit2lost": 22
     },
     "13": {
-      "provincesCaptured": 1,
+      "provincesCaptured": 2,
       "provincesLost": 0,
-      "unit2killed": 12,
+      "unit2killed": 15,
       "unit2lost": 4
     },
     "16": {
@@ -1136,9 +1148,9 @@
     },
     "19": {
       "provincesCaptured": 0,
-      "provincesLost": 2,
+      "provincesLost": 3,
       "unit2killed": 25,
-      "unit2lost": 78
+      "unit2lost": 81
     },
     "21": {
       "provincesCaptured": 2,
@@ -1147,9 +1159,9 @@
       "unit2lost": 18
     },
     "22": {
-      "provincesCaptured": 14,
+      "provincesCaptured": 15,
       "provincesLost": 0,
-      "unit2killed": 97,
+      "unit2killed": 101,
       "unit2lost": 24
     },
     "23": {
@@ -1161,14 +1173,14 @@
     "24": {
       "provincesCaptured": 1,
       "provincesLost": 0,
-      "unit2killed": 10,
-      "unit2lost": 1
+      "unit2killed": 19,
+      "unit2lost": 6
     },
     "27": {
       "provincesCaptured": 0,
       "provincesLost": 1,
-      "unit2killed": 1,
-      "unit2lost": 10
+      "unit2killed": 6,
+      "unit2lost": 19
     },
     "31": {
       "provincesCaptured": 2,
@@ -1177,16 +1189,16 @@
       "unit2lost": 14
     },
     "33": {
-      "provincesCaptured": 15,
+      "provincesCaptured": 18,
       "provincesLost": 0,
-      "unit2killed": 50,
-      "unit2lost": 12
+      "unit2killed": 62,
+      "unit2lost": 13
     },
     "34": {
       "provincesCaptured": 1,
       "provincesLost": 9,
-      "unit2killed": 46,
-      "unit2lost": 80
+      "unit2killed": 48,
+      "unit2lost": 85
     },
     "35": {
       "provincesCaptured": 0,
@@ -1201,22 +1213,22 @@
       "unit2lost": 50
     },
     "37": {
-      "provincesCaptured": 12,
+      "provincesCaptured": 16,
       "provincesLost": 0,
-      "unit2killed": 66,
-      "unit2lost": 16
+      "unit2killed": 86,
+      "unit2lost": 18
     },
     "38": {
       "provincesCaptured": 2,
-      "provincesLost": 5,
-      "unit2killed": 25,
-      "unit2lost": 41
+      "provincesLost": 8,
+      "unit2killed": 26,
+      "unit2lost": 56
     },
     "39": {
       "provincesCaptured": 8,
-      "provincesLost": 15,
+      "provincesLost": 17,
       "unit2killed": 74,
-      "unit2lost": 76
+      "unit2lost": 82
     },
     "40": {
       "provincesCaptured": 0,
@@ -1226,15 +1238,15 @@
     },
     "41": {
       "provincesCaptured": 3,
-      "provincesLost": 2,
-      "unit2killed": 26,
-      "unit2lost": 26
-    },
-    "42": {
-      "provincesCaptured": 1,
-      "provincesLost": 2,
+      "provincesLost": 3,
       "unit2killed": 26,
       "unit2lost": 31
+    },
+    "42": {
+      "provincesCaptured": 2,
+      "provincesLost": 4,
+      "unit2killed": 28,
+      "unit2lost": 37
     },
     "44": {
       "provincesCaptured": 1,
@@ -1250,9 +1262,9 @@
     },
     "47": {
       "provincesCaptured": 3,
-      "provincesLost": 9,
-      "unit2killed": 78,
-      "unit2lost": 96
+      "provincesLost": 10,
+      "unit2killed": 79,
+      "unit2lost": 98
     },
     "48": {
       "provincesCaptured": 3,
@@ -1262,9 +1274,9 @@
     },
     "51": {
       "provincesCaptured": 0,
-      "provincesLost": 2,
-      "unit2killed": 17,
-      "unit2lost": 49
+      "provincesLost": 4,
+      "unit2killed": 19,
+      "unit2lost": 60
     },
     "52": {
       "provincesCaptured": 4,
@@ -1297,10 +1309,10 @@
       "unit2lost": 0
     },
     "60": {
-      "provincesCaptured": 2,
+      "provincesCaptured": 4,
       "provincesLost": 0,
-      "unit2killed": 49,
-      "unit2lost": 17
+      "unit2killed": 60,
+      "unit2lost": 19
     },
     "61": {
       "provincesCaptured": 0,
@@ -1316,33 +1328,33 @@
     },
     "64": {
       "provincesCaptured": 2,
-      "provincesLost": 3,
-      "unit2killed": 7,
-      "unit2lost": 31
+      "provincesLost": 4,
+      "unit2killed": 9,
+      "unit2lost": 42
     },
     "65": {
       "provincesCaptured": 0,
-      "provincesLost": 5,
+      "provincesLost": 6,
       "unit2killed": 5,
-      "unit2lost": 59
+      "unit2lost": 60
     },
     "68": {
-      "provincesCaptured": 6,
+      "provincesCaptured": 8,
       "provincesLost": 0,
-      "unit2killed": 84,
-      "unit2lost": 6
+      "unit2killed": 96,
+      "unit2lost": 8
     },
     "73": {
       "provincesCaptured": 1,
-      "provincesLost": 3,
-      "unit2killed": 25,
-      "unit2lost": 62
+      "provincesLost": 4,
+      "unit2killed": 27,
+      "unit2lost": 68
     },
     "74": {
-      "provincesCaptured": 3,
+      "provincesCaptured": 4,
       "provincesLost": 1,
-      "unit2killed": 62,
-      "unit2lost": 25
+      "unit2killed": 68,
+      "unit2lost": 27
     },
     "75": {
       "provincesCaptured": 3,
@@ -1383,13 +1395,13 @@
     "87": {
       "provincesCaptured": 5,
       "provincesLost": 0,
-      "unit2killed": 57,
+      "unit2killed": 65,
       "unit2lost": 9
     },
     "88": {
-      "provincesCaptured": 6,
+      "provincesCaptured": 7,
       "provincesLost": 0,
-      "unit2killed": 49,
+      "unit2killed": 51,
       "unit2lost": 8
     },
     "90": {
@@ -1408,13 +1420,19 @@
       "provincesCaptured": 0,
       "provincesLost": 1,
       "unit2killed": 2,
-      "unit2lost": 16
+      "unit2lost": 24
     },
     "95": {
-      "provincesCaptured": 2,
+      "provincesCaptured": 3,
       "provincesLost": 0,
+      "unit2killed": 11,
+      "unit2lost": 1
+    },
+    "96": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
       "unit2killed": 1,
-      "unit2lost": 0
+      "unit2lost": 10
     },
     "102": {
       "provincesCaptured": 5,
@@ -1433,6 +1451,12 @@
       "provincesLost": 0,
       "unit2killed": 49,
       "unit2lost": 5
+    },
+    "106": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
+      "unit2killed": 0,
+      "unit2lost": 2
     }
   },
   "relations": {
@@ -1443,6 +1467,12 @@
       },
       "3": {
         "1": -2
+      },
+      "4": {
+        "8": -2
+      },
+      "8": {
+        "4": -2
       },
       "12": {
         "53": -2
@@ -1467,12 +1497,28 @@
         "22": 4,
         "23": -2,
         "24": 4,
+        "25": 4,
+        "28": 4,
+        "30": 4,
         "31": 4,
+        "34": 4,
         "37": 4,
         "39": -2,
         "40": -2,
         "41": -2,
-        "106": 4
+        "42": 4,
+        "50": 4,
+        "57": 4,
+        "58": 4,
+        "94": 4,
+        "96": 4,
+        "97": 4,
+        "98": 4,
+        "99": 4,
+        "100": 4,
+        "106": 4,
+        "107": 4,
+        "108": 4
       },
       "23": {
         "21": -2,
@@ -1514,8 +1560,10 @@
         "34": -2,
         "35": -2,
         "38": -2,
+        "42": -2,
         "46": -2,
-        "47": -2
+        "47": -2,
+        "88": -2
       },
       "38": {
         "33": -2,
@@ -1540,6 +1588,7 @@
         "47": -2
       },
       "42": {
+        "37": -2,
         "39": -2,
         "47": -2
       },
@@ -1637,7 +1686,9 @@
         "93": -2
       },
       "88": {
-        "90": -2
+        "37": -2,
+        "90": -2,
+        "106": -2
       },
       "90": {
         "88": -2
@@ -1665,24 +1716,14 @@
         "103": -2
       },
       "106": {
-        "22": 4
+        "22": 4,
+        "88": -2
       }
     },
     "endOfHonorPeriod": {},
     "initialized": false
   },
   "coalitions": [
-    {
-      "teamID": 1,
-      "name": "DOOP",
-      "score": 78,
-      "memberIDs": [
-        88,
-        95
-      ],
-      "primaryColor": "rgba(120,140,40,255)",
-      "leaderID": 95
-    },
     {
       "teamID": 2,
       "name": "Winners",
@@ -1738,6 +1779,16 @@
       ],
       "primaryColor": "rgba(40,90,80,255)",
       "leaderID": 39
+    },
+    {
+      "teamID": 7,
+      "name": "Here to win",
+      "score": 32,
+      "memberIDs": [
+        74
+      ],
+      "primaryColor": "rgba(120,140,120,255)",
+      "leaderID": 74
     }
   ],
   "scores": {
@@ -1856,25 +1907,25 @@
     "1": 12,
     "2": 4,
     "3": 4,
-    "4": 10,
+    "4": 11,
     "5": 10,
     "6": 3,
     "7": 4,
-    "8": 10,
+    "8": 9,
     "9": 3,
     "10": 5,
     "11": 5,
     "12": 11,
-    "13": 11,
+    "13": 12,
     "14": 3,
     "15": 6,
     "16": 11,
     "17": 6,
     "18": 5,
-    "19": 8,
+    "19": 7,
     "20": 4,
     "21": 12,
-    "22": 23,
+    "22": 24,
     "24": 10,
     "25": 2,
     "26": 3,
@@ -1884,44 +1935,42 @@
     "30": 2,
     "31": 12,
     "32": 3,
-    "33": 24,
+    "33": 27,
     "34": 2,
-    "37": 22,
-    "38": 3,
-    "39": 4,
+    "37": 26,
+    "39": 2,
     "40": 3,
-    "41": 5,
-    "42": 3,
+    "41": 4,
+    "42": 2,
     "43": 5,
     "44": 3,
     "45": 10,
     "46": 6,
-    "47": 4,
+    "47": 3,
     "48": 8,
     "49": 4,
     "50": 6,
-    "51": 8,
+    "51": 6,
     "52": 14,
     "54": 12,
     "56": 10,
     "57": 6,
     "58": 5,
     "59": 5,
-    "60": 12,
+    "60": 14,
     "61": 7,
     "62": 5,
     "63": 4,
-    "64": 9,
-    "65": 1,
+    "64": 8,
     "66": 3,
     "67": 5,
-    "68": 16,
+    "68": 18,
     "69": 10,
     "70": 4,
     "71": 4,
     "72": 4,
-    "73": 8,
-    "74": 12,
+    "73": 7,
+    "74": 13,
     "75": 6,
     "76": 4,
     "77": 10,
@@ -1932,14 +1981,14 @@
     "82": 5,
     "84": 15,
     "87": 15,
-    "88": 16,
+    "88": 17,
     "89": 3,
     "91": 5,
     "92": 8,
     "93": 3,
     "94": 3,
-    "95": 12,
-    "96": 4,
+    "95": 13,
+    "96": 3,
     "97": 2,
     "98": 1,
     "99": 2,
@@ -1948,9 +1997,12 @@
     "102": 15,
     "104": 10,
     "105": 15,
-    "106": 10,
+    "106": 9,
     "107": 6,
     "108": 6
   },
-  "reportedAt": "2026-07-08T16:30:01+08:00"
+  "startInfo": {},
+  "myIdCandidate": null,
+  "reportedAt": "2026-07-08T21:27:56+08:00",
+  "gameID": "10840714"
 }
