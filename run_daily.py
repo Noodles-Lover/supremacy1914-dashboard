@@ -9,7 +9,7 @@ Supremacy 1914 — 每日自動化腳本（由 Windows 工作排程器於 automa
         故採「固定鐘點排程 + 有限重試」而非 24h 全天候輪詢。
      —— 不依賴精確切日鐘點：即使排程早/晚幾小時，只要在窗口內偵測到 day 遞增就提交。
   2. 擷取成功且遊戲日遞增後，由 extract_day.py 自動重建儀表盤。
-  3. 提交並推送 main；GitHub Actions 偵測 push 後自動部署到 gh-pages。
+  3. 直接部署到 gh-pages（deploy_ghpages.py 用 git worktree 推送），main 不動、不會每天多 commit。
   4. 若 automation.json 的排程時間與現有工作排程不同，重新註冊（使用者改時間後重跑 setup 即生效）。
 
 前置：setup_automation.py 已執行過一次（註冊排程 + 設定 git 憑證）。
@@ -75,10 +75,6 @@ def run_extract():
         return False
 
 
-def git(*args):
-    return subprocess.run(["git", *args], cwd=BASE, capture_output=True, text=True)
-
-
 def reregister_if_needed():
     """若 automation.json 的排程時間與現有工作排程不同，重新註冊（使用者改時間後重跑 setup 即生效）。"""
     try:
@@ -131,27 +127,22 @@ def main():
 
     reregister_if_needed()
 
-    # git 提交並推送（GitHub Actions 會自動部署）
-    git("add", "games/", "supremacy1914_dashboard.html")
-    d = git("diff", "--cached", "--quiet")
-    if d.returncode != 0:
-        day = None
-        files = sorted(glob.glob(os.path.join(BASE, "games", "*", "data", "day_*.json")))
-        if files:
-            try:
-                last = json.load(open(files[-1], encoding="utf-8"))
-                day = last.get("day")
-            except Exception:
-                pass
-        msg = f"auto: 遊戲日 {day} 快照與儀表盤更新" if day else "auto: 資料更新"
-        git("commit", "-m", msg)
-        p = git("push", "origin", "main")
-        if p.returncode != 0:
-            log(f"推送失敗：{p.stderr}")
-            sys.exit(3)
-        log("已推送 main，GitHub Actions 將自動部署到 gh-pages。")
+    # 重建儀表盤已由 extract_day.py（當日首次報告）完成；直接部署到 gh-pages。
+    # 不提交 main，因此 main 不會每天多一個 commit。
+    DEPLOY = os.path.join(BASE, "deploy_ghpages.py")
+    if not os.path.exists(DEPLOY):
+        log("[WARN] 找不到 deploy_ghpages.py，跳過自動部署。")
     else:
-        log("無變更，跳過提交。")
+        log("[..] 部署到 gh-pages…")
+        try:
+            r = subprocess.run([VENV_PY, DEPLOY], cwd=BASE)
+            if r.returncode != 0:
+                log(f"部署失敗（exit {r.returncode}），請檢查 git 憑證/網路。")
+                sys.exit(3)
+        except Exception as e:
+            log(f"部署例外：{e}")
+            sys.exit(3)
+        log("已推送 gh-pages，站點將更新。main 未因此產生每日 commit。")
 
 
 if __name__ == "__main__":

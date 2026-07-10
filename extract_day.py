@@ -332,18 +332,26 @@ async def _run(no_build: bool):
                 json.dump(meta, mf, ensure_ascii=False, indent=2)
             print(f"[OK] 對局 meta：切日鐘點={switch_clock} · 我的ID={my_id}")
 
-        # 4) 重建儀表盤（僅當日首次報告才重建；額外報告不影響趨勢與圖表）
-        if is_first and not no_build:
-            if not os.path.exists(OUT_PY):
-                print("[WARN] 找不到 build_dashboard.py，跳過自動重建。")
-            else:
-                print("[..] 重建儀表盤…")
-                try:
-                    subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
-                except subprocess.CalledProcessError as e:
-                    print(f"[WARN] 儀表盤重建失敗：{e}")
+        # 4) 產出可檢視 HTML
+        if not os.path.exists(OUT_PY):
+            print("[WARN] 找不到 build_dashboard.py，跳過 HTML 產出。")
+        elif is_first and not no_build:
+            # 當日首次報告 → 重建主面板（含該日基準，會出現在趨勢/變化）
+            print("[..] 重建主面板…")
+            try:
+                subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
+            except subprocess.CalledProcessError as e:
+                print(f"[WARN] 主面板重建失敗：{e}")
         elif not is_first:
-            print(f"[INFO] 額外報告不重建儀表盤（基準 day_{day}.json 未變動）。")
+            # 額外報告 → 產生獨立快照 HTML（不動主面板、不進趨勢）
+            if no_build:
+                print(f"[INFO] --no-build：額外報告不產生獨立 HTML。")
+            else:
+                print("[..] 產生額外報告獨立 HTML…")
+                try:
+                    subprocess.run([sys.executable, OUT_PY, "--single", out_path], cwd=BASE, check=True)
+                except subprocess.CalledProcessError as e:
+                    print(f"[WARN] 額外報告 HTML 產生失敗：{e}")
         return True
 
 

@@ -212,53 +212,131 @@ def build_payload(day_data, my_id=None):
     return payload
 
 
-# ── Load all games & days ──
-GAMES = {}
-GAME_ORDER = []
-for game_dir in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
+# ── 渲染模板（共用）──
+def render_template(games, gorder, my_ids, banner=""):
+    games_json = json.dumps(games, ensure_ascii=False)
+    gorder_json = json.dumps(gorder)
+    return (TEMPLATE
+            .replace("__GAMES_JSON__", games_json)
+            .replace("__GAME_ORDER_JSON__", gorder_json)
+            .replace("__MY_IDS_JSON__", json.dumps(my_ids, ensure_ascii=False))
+            .replace("__EXTRA_BANNER__", banner))
+
+
+# ── 全量建構：讀取所有對局 / 遊戲日基準檔，產生主面板 ──
+def build_all():
+    GAMES = {}
+    GAME_ORDER = []
+    for game_dir in sorted(glob.glob(os.path.join(GAMES_DIR, "*"))):
+        gid = os.path.basename(game_dir)
+        # 僅納入「當日首次報告」的基準檔 day_{N}.json；
+        # 同日額外報告 day_{N}_{時間戳}.json 不進趨勢/變化，故排除。
+        day_files = sorted(
+            f for f in glob.glob(os.path.join(game_dir, "data", "day_*.json"))
+            if re.match(r"day_\d+\.json$", os.path.basename(f))
+        )
+        if not day_files:
+            continue
+        meta = load_meta(gid)
+        my_id = meta.get("myID", int(os.environ.get("MY_ID", 22)))
+        days = {}
+        order = []
+        for df in day_files:
+            dd = load_day(df)
+            day_num = dd.get("day")
+            if day_num is None:
+                continue
+            days[str(day_num)] = build_payload(dd, my_id)
+            order.append(day_num)
+        if not order:
+            continue
+        order.sort()
+        GAMES[gid] = {"gameID": gid, "days": days, "order": order, "myID": my_id}
+
+    # 對局排序：依 gameID 數值升序（穩定、可預期）
+    def _gid_key(g):
+        return int(g) if g.isdigit() else g
+    GAME_ORDER = sorted(GAMES.keys(), key=_gid_key)
+    MY_IDS = {gid: GAMES[gid].get("myID", 22) for gid in GAMES}
+
+    out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
+    if not GAMES:
+        with open(out_path, "w", encoding="utf-8") as f:
+            f.write("<!DOCTYPE html><html lang='zh-Hant'><head><meta charset='UTF-8'>"
+                    "<title>尚無資料</title></head><body style='background:#0c0f16;color:#e7e9ee;"
+                    "font-family:sans-serif;padding:48px'><h1>尚無對局資料</h1>"
+                    "<p>請先執行 <code>python extract_day.py</code> 擷取遊戲數據。</p></body></html>")
+        print("[WARN] 找不到任何 games/*/data/day_*.json，僅輸出空白提示頁。")
+        return
+
+    html = render_template(GAMES, GAME_ORDER, MY_IDS)
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(html)
+    print(f"[OK] {out_path} ({os.path.getsize(out_path)/1024:.1f} KB)")
+    print(f"  Games available: {GAME_ORDER}")
+    for gid in GAME_ORDER:
+        g = GAMES[gid]
+        print(f"   對局 {gid}: 天數={g['order']} · 最新日玩家數={g['days'][str(g['order'][-1])]['meta']['playerCount']}")
+
+
+# ── 單檔建構：針對某一份快照（含額外報告）產生獨立可檢視 HTML ──
+def build_single(path):
+    if not os.path.exists(path):
+        print(f"[ERR] 找不到資料檔：{path}")
+        sys.exit(1)
+    day_data = load_day(path)
+    day = day_data.get("day")
+    if day is None:
+        print("[ERR] 資料檔缺少 day 欄位，無法渲染。")
+        sys.exit(1)
+
+    # 由路徑推導對局編號：games/<gid>/data/day_*.json
+    data_dir = os.path.dirname(os.path.abspath(path))
+    game_dir = os.path.dirname(data_dir)
     gid = os.path.basename(game_dir)
-    # 僅納入「當日首次報告」的基準檔 day_{N}.json；
-    # 同日額外報告 day_{N}_{時間戳}.json 不進趨勢/變化，故排除。
-    day_files = sorted(
-        f for f in glob.glob(os.path.join(game_dir, "data", "day_*.json"))
-        if re.match(r"day_\d+\.json$", os.path.basename(f))
-    )
-    if not day_files:
-        continue
     meta = load_meta(gid)
     my_id = meta.get("myID", int(os.environ.get("MY_ID", 22)))
-    days = {}
-    order = []
-    for df in day_files:
-        dd = load_day(df)
-        day_num = dd.get("day")
-        if day_num is None:
-            continue
-        days[str(day_num)] = build_payload(dd, my_id)
-        order.append(day_num)
-    if not order:
-        continue
-    order.sort()
-    GAMES[gid] = {"gameID": gid, "days": days, "order": order, "myID": my_id}
+    payload = build_payload(day_data, my_id)
 
-# 對局排序：依 gameID 數值升序（穩定、可預期）
-def _gid_key(g):
-    return int(g) if g.isdigit() else g
-GAME_ORDER = sorted(GAMES.keys(), key=_gid_key)
-MY_IDS = {gid: GAMES[gid].get("myID", 22) for gid in GAMES}
+    games = {gid: {"gameID": gid, "days": {str(day): payload}, "order": [day], "myID": my_id}}
+    gorder = [gid]
+    my_ids = {gid: my_id}
 
-if not GAMES:
-    out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
+    # 額外報告（同日加時間戳者）加註說明橫幅，避免與主面板基準混淆
+    reported = day_data.get("reportedAt") or "時間未記錄"
+    ts_disp = (reported.replace("T", " ").replace("+08:00", " (GMT+8)")
+               if reported != "時間未記錄" else "時間未記錄")
+    is_extra = re.match(r"day_\d+_\d{8}_\d{6}\.json$", os.path.basename(path)) is not None
+    if is_extra:
+        banner = (
+            '<div class="card" style="border-color:rgba(224,168,90,0.4);'
+            'background:linear-gradient(135deg,rgba(224,168,90,0.12),rgba(20,26,40,0.5));margin-bottom:26px;">'
+            '<h3 style="margin-bottom:10px;">額外報告 · 即時快照</h3>'
+            '<p style="color:var(--dim);font-size:0.86rem;line-height:1.65;">這是遊戲日 <b style="color:var(--text)">'
+            f'{day}</b> 於 <b style="color:var(--text)">{ts_disp}</b> 擷取的額外報告，僅供即時查看，'
+            '<b style="color:var(--text)">未納入主面板的趨勢與變化</b>。'
+            '如需歸入趨勢，請以該日首次擷取為基準。</p></div>'
+        )
+    else:
+        banner = ""
+
+    html = render_template(games, gorder, my_ids, banner)
+    out_path = re.sub(r"\.json$", ".html", path)
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write("<!DOCTYPE html><html lang='zh-Hant'><head><meta charset='UTF-8'>"
-                "<title>尚無資料</title></head><body style='background:#0c0f16;color:#e7e9ee;"
-                "font-family:sans-serif;padding:48px'><h1>尚無對局資料</h1>"
-                "<p>請先執行 <code>python extract_day.py</code> 擷取遊戲數據。</p></body></html>")
-    print("[WARN] 找不到任何 games/*/data/day_*.json，僅輸出空白提示頁。")
-    raise SystemExit(0)
+        f.write(html)
+    print(f"[OK] 獨立快照 {out_path} ({os.path.getsize(out_path)/1024:.1f} KB)  [對局 {gid} · 遊戲日 {day}]")
 
-games_json = json.dumps(GAMES, ensure_ascii=False)
-gorder_json = json.dumps(GAME_ORDER)
+
+def main():
+    if "--single" in sys.argv:
+        idx = sys.argv.index("--single")
+        if idx + 1 >= len(sys.argv):
+            print("[ERR] --single 需要接一個資料檔路徑")
+            sys.exit(1)
+        build_single(sys.argv[idx + 1])
+    else:
+        build_all()
+
 
 TEMPLATE = r"""<!DOCTYPE html>
 <html lang="zh-Hant">
@@ -472,7 +550,7 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 </head>
 <body>
 <div class="container">
-
+__EXTRA_BANNER__
 <header>
   <div class="brand">
     <h1>Supremacy <span>1914</span> · 戰況面板</h1>
@@ -857,17 +935,6 @@ buildTrendChart();
 </html>
 """
 
-html = (TEMPLATE
-        .replace("__GAMES_JSON__", games_json)
-        .replace("__GAME_ORDER_JSON__", gorder_json)
-        .replace("__MY_IDS_JSON__", json.dumps(MY_IDS, ensure_ascii=False)))
+if __name__ == "__main__":
+    main()
 
-out_path = os.path.join(BASE, "supremacy1914_dashboard.html")
-with open(out_path, "w", encoding="utf-8") as f:
-    f.write(html)
-
-print(f"[OK] {out_path} ({os.path.getsize(out_path)/1024:.1f} KB)")
-print(f"  Games available: {GAME_ORDER}")
-for gid in GAME_ORDER:
-    g = GAMES[gid]
-    print(f"   對局 {gid}: 天數={g['order']} · 最新日玩家數={g['days'][str(g['order'][-1])]['meta']['playerCount']}")

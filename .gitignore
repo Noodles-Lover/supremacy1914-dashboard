@@ -14,3 +14,8 @@ automation.log
 
 # 同日額外報告（加時間戳）不納入版本控制，僅保留基準 day_{N}.json
 games/*/data/day_*_*.json
+games/*/data/day_*_*.html
+
+# 每日基準資料與生成的儀表盤 HTML 不再納入 main（備份改存 gh-pages，由 deploy_ghpages.py 推送）
+games/*/data/day_*.json
+supremacy1914_dashboard.html
