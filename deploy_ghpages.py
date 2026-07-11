@@ -51,7 +51,8 @@ def deploy(no_push=False, force=False):
         run_git("fetch", "origin", "gh-pages", check=False)
         # 若本地已有 gh-pages 分支（上次 remove 未清乾淨），先刪除避免衝突
         run_git("branch", "-D", "gh-pages", check=False)
-        run_git("worktree", "add", wt, "origin/gh-pages")
+        # -B：明確建立/重設本地 gh-pages 分支並簽出，避免 worktree 落在 detached HEAD 導致無法 push
+        run_git("worktree", "add", "-B", "gh-pages", wt, "origin/gh-pages")
 
         # 複製生成物：index.html（站點入口）
         shutil.copyfile(HTML, os.path.join(wt, "index.html"))
@@ -72,7 +73,8 @@ def deploy(no_push=False, force=False):
         if no_push:
             print(f"[DRY] 已在本機 worktree 提交（{wt}），跳過推送。")
             return
-        run_git("push", "origin", "gh-pages", cwd=wt)
+        # 用 HEAD:refs/heads/gh-pages 推送，不依賴本地分支名稱是否恰為 gh-pages
+        run_git("push", "origin", "HEAD:refs/heads/gh-pages", cwd=wt)
         print(f"[OK] 已推送 gh-pages（{msg}）。")
     finally:
         # 清理 worktree（會一併移除本地 gh-pages 分支，下次從 origin 重新簽出）
