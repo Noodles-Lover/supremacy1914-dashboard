@@ -55,7 +55,12 @@ def pid_nationname(player_lookup, pid):
     return f"玩家 {pid}"
 
 
-def build_payload(day_data, my_id=None):
+def get_province_counts(day_data):
+    """回傳 {str(playerID): 領地數}。被消滅（領地=0）的玩家不會出現在鍵中。"""
+    return {str(k): v for k, v in day_data.get("provinceCounts", {}).items()}
+
+
+def build_payload(day_data, my_id=None, prev_provinces=None):
     my_id = my_id if my_id is not None else MY_ID
     players = day_data.get("players", [])
     player_lookup = {p["id"]: p for p in players}
@@ -63,7 +68,13 @@ def build_payload(day_data, my_id=None):
     relations = day_data.get("relations", {})
     coalitions = day_data.get("coalitions", [])
     scores = {str(k): v for k, v in day_data.get("scores", {}).items()}
-    province_counts = {str(k): v for k, v in day_data.get("provinceCounts", {}).items()}
+    province_counts = get_province_counts(day_data)
+    # 存活判斷：前一天領地數 > 0 才續留資料列表。
+    # 無前一天（首份快照）時改以當日領地判斷。被消滅（領地=0）玩家直接剔除，
+    # 不進任何統計（戰力排行、領土、趨勢、聯盟增幅、全部玩家表皆忽略該國）。
+    prev_pc = prev_provinces if prev_provinces is not None else province_counts
+    def is_alive(pid):
+        return prev_pc.get(str(pid), 0) > 0
 
     team_to_name = {c["teamID"]: c["name"] for c in coalitions}
     team_to_score = {c["teamID"]: c["score"] for c in coalitions}
@@ -116,7 +127,7 @@ def build_payload(day_data, my_id=None):
             "allies": allies, "enemies": enemies,
         }
 
-    all_human = [player_row(p) for p in players if not p["ai"] and p["id"] != 0]
+    all_human = [player_row(p) for p in players if not p["ai"] and p["id"] != 0 and is_alive(p["id"])]
     all_human.sort(key=lambda r: r["score"], reverse=True)
     me = player_lookup.get(my_id)
     me = player_row(me) if me else player_row(all_human[0])
@@ -241,12 +252,14 @@ def build_all():
         my_id = meta.get("myID", int(os.environ.get("MY_ID", 22)))
         days = {}
         order = []
+        prev_pc = None
         for df in day_files:
             dd = load_day(df)
             day_num = dd.get("day")
             if day_num is None:
                 continue
-            days[str(day_num)] = build_payload(dd, my_id)
+            days[str(day_num)] = build_payload(dd, my_id, prev_provinces=prev_pc)
+            prev_pc = get_province_counts(dd)
             order.append(day_num)
         if not order:
             continue
@@ -296,7 +309,21 @@ def build_single(path):
     gid = os.path.basename(game_dir)
     meta = load_meta(gid)
     my_id = meta.get("myID", int(os.environ.get("MY_ID", 22)))
-    payload = build_payload(day_data, my_id)
+    # 單檔快照：嘗試載入同對局前一個基準日，套用「前一天領地=0 則移除」規則
+    prev_pc = None
+    try:
+        all_df = sorted(glob.glob(os.path.join(game_dir, "data", "day_*.json")),
+                        key=lambda x: int(re.match(r"day_(\d+)", os.path.basename(x)).group(1)))
+        for f in reversed(all_df):
+            if not re.match(r"day_\d+\.json$", os.path.basename(f)):
+                continue
+            fd = load_day(f)
+            if fd.get("day") == day - 1:
+                prev_pc = get_province_counts(fd)
+                break
+    except Exception:
+        prev_pc = None
+    payload = build_payload(day_data, my_id, prev_provinces=prev_pc)
 
     games = {gid: {"gameID": gid, "days": {str(day): payload}, "order": [day], "myID": my_id}}
     gorder = [gid]
@@ -828,9 +855,10 @@ function buildLeaderboard(d, pDay){
 const TREND_METRICS=[
   {key:'score',label:'分數',color:'rgba(224,168,90,0.95)',fill:'rgba(224,168,90,0.12)'},
   {key:'kills',label:'擊殺',color:'rgba(63,185,104,0.95)',fill:'rgba(63,185,104,0.12)'},
+  {key:'losses',label:'陣亡',color:'rgba(239,83,80,0.95)',fill:'rgba(239,83,80,0.12)'},
   {key:'provinces',label:'領地',color:'rgba(120,170,255,0.95)',fill:'rgba(120,170,255,0.12)'},
   {key:'captured',label:'佔領',color:'rgba(232,196,104,0.95)',fill:'rgba(232,196,104,0.12)'},
-  {key:'lost',label:'被佔領',color:'rgba(239,83,80,0.95)',fill:'rgba(239,83,80,0.12)'},
+  {key:'lost',label:'被佔領',color:'rgba(255,140,80,0.95)',fill:'rgba(255,140,80,0.12)'},
 ];
 let trendMetric='score';
 let trendChart=null;
