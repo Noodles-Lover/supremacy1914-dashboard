@@ -248,17 +248,42 @@ async def _run(no_build: bool):
         await send("Runtime.enable")
 
         # 2) 找到 hup 所在的遊戲 iframe 執行環境
-        game_ctx = None
-        for cid in range(1, 50):
+        #    依 supremacy1914-monitoring 技能 §6/§7：
+        #      - 背景/凍結的分頁單次掃描會失敗，必須輪詢（每 ~0.4s 重新掃描 contexts，最多 ~12s）；
+        #      - 必須確認 hup.gameState.states 非空（client 已連線、資料已載入）才擷取，
+        #        否則凍結/斷線的分頁會吐出空白資料（hup 存在但 states 被清空）。
+        async def probe_hup(ctx):
             r = await send("Runtime.evaluate", {
-                "expression": "typeof hup !== 'undefined' ? 'yes' : 'no'",
-                "contextId": cid, "returnByValue": True,
+                "expression": (
+                    "typeof hup !== 'undefined' && typeof hup.gameState !== 'undefined' "
+                    "&& hup.gameState.states && Object.keys(hup.gameState.states).length > 0 "
+                    "? 'live' : (typeof hup !== 'undefined' ? 'dead' : 'no')"
+                ),
+                "contextId": ctx, "returnByValue": True,
             })
-            if r.get("result", {}).get("result", {}).get("value") == "yes":
-                game_ctx = cid
+            return r.get("result", {}).get("result", {}).get("value")
+
+        game_ctx = None
+        dead_ctx = None
+        poll_deadline = time.monotonic() + 12  # 輪詢視窗 12 秒
+        while time.monotonic() < poll_deadline:
+            for cid in range(1, 50):
+                st = await probe_hup(cid)
+                if st == "live":
+                    game_ctx = cid
+                    break
+                if st == "dead" and dead_ctx is None:
+                    dead_ctx = cid
+            if game_ctx is not None:
                 break
+            await asyncio.sleep(0.4)
+
         if game_ctx is None:
-            print("[ERR] 在頁面執行環境中找不到 hup（遊戲可能還在載入，請稍候重試）。")
+            if dead_ctx is not None:
+                print("[ERR] 找到遊戲分頁，但 hup.gameState.states 為空（分頁已凍結 / 與伺服器斷線）。"
+                      "請點擊並聚焦遊戲分頁，待其重新連線後再重試。")
+            else:
+                print("[ERR] 在頁面執行環境中找不到 hup（遊戲分頁可能未開啟或還在載入，請稍候重試）。")
             return False
 
         async def eg(js):
