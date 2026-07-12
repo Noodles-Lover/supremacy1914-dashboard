@@ -234,25 +234,57 @@ async def _run(no_build: bool):
 
     async with websockets.connect(ws_url, max_size=80_000_000) as ws:
         mid = [0]
+        _pending = {}
+        _buffer = {}
+        live_contexts = set()
+        _closed = False
+        reader_task = None
 
         async def send(method, params=None):
             mid[0] += 1
             m = {"id": mid[0], "method": method}
             if params:
                 m["params"] = params
+            q = asyncio.Queue()
+            _pending[mid[0]] = q
+            # 若該 id 的回應已先抵達（被 reader 緩衝），直接取用，不重送
+            if mid[0] in _buffer:
+                return _buffer.pop(mid[0])
             await ws.send(json.dumps(m))
-            while True:
-                d = json.loads(await ws.recv())
-                if d.get("id") == mid[0]:
-                    return d
+            return await q.get()
 
+        # 背景協程：持續接收 CDP 訊息
+        #   - 帶 id 的回應 → 若 send 已註冊則立即交付；否則暫存緩衝（避免回應先到導致 send 永遠等待）
+        #   - Runtime.executionContextCreated → 記錄 contextId（含背景分頁延遲建立的 iframe context）
+        #   - Runtime.executionContextsCleared → 清空
+        async def reader():
+            while not _closed:
+                try:
+                    d = json.loads(await ws.recv())
+                except Exception:
+                    break
+                rid = d.get("id")
+                if rid is not None:
+                    if rid in _pending:
+                        await _pending.pop(rid).put(d)
+                    else:
+                        _buffer[rid] = d
+                elif d.get("method") == "Runtime.executionContextCreated":
+                    ctx = d.get("params", {}).get("context", {})
+                    cid = ctx.get("id")
+                    if cid is not None:
+                        live_contexts.add(cid)
+                elif d.get("method") == "Runtime.executionContextsCleared":
+                    live_contexts.clear()
+
+        reader_task = asyncio.ensure_future(reader())
         await send("Runtime.enable")
 
         # 2) 找到 hup 所在的遊戲 iframe 執行環境
-        #    依 supremacy1914-monitoring 技能 §6/§7：
-        #      - 背景/凍結的分頁單次掃描會失敗，必須輪詢（每 ~0.4s 重新掃描 contexts，最多 ~12s）；
-        #      - 必須確認 hup.gameState.states 非空（client 已連線、資料已載入）才擷取，
-        #        否則凍結/斷線的分頁會吐出空白資料（hup 存在但 states 被清空）。
+        #    依 supremacy1914-monitoring 技能 §6/§7：背景/凍結分頁單次掃描會失敗，
+        #    必須以事件驅動持續收集新建立的 execution contexts 並輪詢，
+        #    且確認 hup.gameState.states 非空（client 已連線、資料已載入）才擷取，
+        #    否則凍結/斷線分頁會吐空白資料（hup 存在但 states 被清空）。
         async def probe_hup(ctx):
             r = await send("Runtime.evaluate", {
                 "expression": (
@@ -264,121 +296,141 @@ async def _run(no_build: bool):
             })
             return r.get("result", {}).get("result", {}).get("value")
 
-        game_ctx = None
-        dead_ctx = None
-        poll_deadline = time.monotonic() + 12  # 輪詢視窗 12 秒
-        while time.monotonic() < poll_deadline:
-            for cid in range(1, 50):
-                st = await probe_hup(cid)
-                if st == "live":
-                    game_ctx = cid
+        try:
+            game_ctx = None
+            dead_ctx = None
+            seen_hup_undefined = False
+            poll_deadline = time.monotonic() + 20  # 背景/凍結分頁延遲建立 context，拉長視窗
+            while time.monotonic() < poll_deadline:
+                # 事件收集到的 contexts；若事件尚未送達則用固定範圍備援掃描（雙保險）
+                cids = set(live_contexts)
+                if not cids:
+                    cids = set(range(1, 60))
+                for cid in cids:
+                    st = await probe_hup(cid)
+                    if st == "live":
+                        game_ctx = cid
+                        break
+                    if st == "dead" and dead_ctx is None:
+                        dead_ctx = cid
+                    if st == "no":
+                        seen_hup_undefined = True
+                if game_ctx is not None:
                     break
-                if st == "dead" and dead_ctx is None:
-                    dead_ctx = cid
-            if game_ctx is not None:
-                break
-            await asyncio.sleep(0.4)
+                await asyncio.sleep(0.4)
 
-        if game_ctx is None:
-            if dead_ctx is not None:
-                print("[ERR] 找到遊戲分頁，但 hup.gameState.states 為空（分頁已凍結 / 與伺服器斷線）。"
-                      "請點擊並聚焦遊戲分頁，待其重新連線後再重試。")
+            if game_ctx is None:
+                if dead_ctx is not None:
+                    print("[ERR] 找到遊戲分頁，但 hup.gameState.states 為空（分頁已凍結 / 與伺服器斷線）。"
+                          "請點擊並聚焦遊戲分頁，待其重新連線後再重試。")
+                elif seen_hup_undefined:
+                    print("[ERR] 已掃描到分頁執行環境，但其中找不到 hup（遊戲腳本可能尚未載入完成）。"
+                          "請確認遊戲已完全進入對局畫面，並讓該分頁保持前景（點進該分頁、不要被其他視窗蓋住），稍候重試。")
+                else:
+                    print("[ERR] 在頁面執行環境中找不到任何執行上下文（分頁可能凍結 / 未開啟 / 非遊戲分頁）。"
+                          "請點擊並聚焦遊戲分頁，待其重新連線後再重試。")
+                return False
+
+            async def eg(js):
+                r = await send("Runtime.evaluate", {
+                    "expression": js, "contextId": game_ctx,
+                    "returnByValue": True, "awaitPromise": True,
+                })
+                res = r.get("result", {}).get("result", {})
+                if res.get("subtype") == "error":
+                    return {"__error__": res.get("description", "JS error")}
+                return res.get("value")
+
+            print(f"[OK] 已連線遊戲執行環境 (contextId={game_ctx})，開始擷取…")
+            raw = await eg(EXTRACT_JS)
+            if isinstance(raw, str):
+                raw = json.loads(raw)
+            if isinstance(raw, dict) and raw.get("__error__"):
+                print("[ERR] 擷取失敗：", raw["__error__"])
+                return False
+
+            # 3) 蓋時間戳、標註 gameID 並寫檔（按對局分資料夾）
+            tz = timezone(timedelta(hours=8))
+            raw["reportedAt"] = datetime.now(tz).strftime("%Y-%m-%dT%H:%M:%S+08:00")
+            raw["gameID"] = game_id
+
+            day = raw.get("day")
+            if day is None:
+                print("[ERR] 無法取得遊戲日（day 為空），中止寫檔。")
+                return False
+
+            game_dir = os.path.join(GAMES_DIR, game_id)
+            data_dir = os.path.join(game_dir, "data")
+            os.makedirs(data_dir, exist_ok=True)
+            canonical_path = os.path.join(data_dir, f"day_{day}.json")
+            # 當日首次報告 → 寫入 day_{N}.json（基準，納入趨勢/變化）；
+            # 同日後續報告 → 加時間戳另存為額外報告，不覆蓋基準、不進趨勢。
+            is_first = not os.path.exists(canonical_path)
+            if is_first:
+                out_path = canonical_path
+                action = "當日首次報告（基準）"
             else:
-                print("[ERR] 在頁面執行環境中找不到 hup（遊戲分頁可能未開啟或還在載入，請稍候重試）。")
-            return False
+                ts = datetime.now(tz).strftime("%Y%m%d_%H%M%S")
+                out_path = os.path.join(data_dir, f"day_{day}_{ts}.json")
+                action = "額外報告（加時間戳，不納入趨勢/變化）"
+            with open(out_path, "w", encoding="utf-8") as f:
+                json.dump(raw, f, ensure_ascii=False, indent=2)
 
-        async def eg(js):
-            r = await send("Runtime.evaluate", {
-                "expression": js, "contextId": game_ctx,
-                "returnByValue": True, "awaitPromise": True,
-            })
-            res = r.get("result", {}).get("result", {})
-            if res.get("subtype") == "error":
-                return {"__error__": res.get("description", "JS error")}
-            return res.get("value")
+            pc = raw.get("provinceCounts", {})
+            print(f"[OK] 寫入 {out_path}  [{action}]")
+            print(f"  對局={game_id} · 遊戲日={day} · 玩家={len(raw.get('players', []))} · "
+                  f"統計={len(raw.get('playerStats', {}))} · 聯盟={len(raw.get('coalitions', []))} · "
+                  f"領地記錄={len(pc)}")
 
-        print(f"[OK] 已連線遊戲執行環境 (contextId={game_ctx})，開始擷取…")
-        raw = await eg(EXTRACT_JS)
-        if isinstance(raw, str):
-            raw = json.loads(raw)
-        if isinstance(raw, dict) and raw.get("__error__"):
-            print("[ERR] 擷取失敗：", raw["__error__"])
-            return False
+            # 3.5) 僅「當日首次報告」寫入對局 meta（切日鐘點 + 我的 ID），供自動化排程與「我」標註使用
+            if is_first:
+                start_info = raw.get("startInfo", {})
+                switch_clock = parse_switch_clock(start_info) or SWITCH_FALLBACK
+                if switch_clock == SWITCH_FALLBACK and start_info:
+                    print(f"[WARN] 無法從 GameInfo 推算切日鐘點，暫用預設 {SWITCH_FALLBACK}（不正確可在 games/{game_id}/meta.json 手調）。")
+                my_id = raw.get("myIdCandidate")
+                if my_id is None:
+                    my_id = int(os.environ.get("MY_ID", 22))
+                meta = {
+                    "gameID": game_id,
+                    "switchClock": switch_clock,
+                    "myID": my_id,
+                    "lastDay": day,
+                    "updatedAt": raw.get("reportedAt"),
+                }
+                with open(os.path.join(game_dir, "meta.json"), "w", encoding="utf-8") as mf:
+                    json.dump(meta, mf, ensure_ascii=False, indent=2)
+                print(f"[OK] 對局 meta：切日鐘點={switch_clock} · 我的ID={my_id}")
 
-        # 3) 蓋時間戳、標註 gameID 並寫檔（按對局分資料夾）
-        tz = timezone(timedelta(hours=8))
-        raw["reportedAt"] = datetime.now(tz).strftime("%Y-%m-%dT%H:%M:%S+08:00")
-        raw["gameID"] = game_id
-
-        day = raw.get("day")
-        if day is None:
-            print("[ERR] 無法取得遊戲日（day 為空），中止寫檔。")
-            return False
-
-        game_dir = os.path.join(GAMES_DIR, game_id)
-        data_dir = os.path.join(game_dir, "data")
-        os.makedirs(data_dir, exist_ok=True)
-        canonical_path = os.path.join(data_dir, f"day_{day}.json")
-        # 當日首次報告 → 寫入 day_{N}.json（基準，納入趨勢/變化）；
-        # 同日後續報告 → 加時間戳另存為額外報告，不覆蓋基準、不進趨勢。
-        is_first = not os.path.exists(canonical_path)
-        if is_first:
-            out_path = canonical_path
-            action = "當日首次報告（基準）"
-        else:
-            ts = datetime.now(tz).strftime("%Y%m%d_%H%M%S")
-            out_path = os.path.join(data_dir, f"day_{day}_{ts}.json")
-            action = "額外報告（加時間戳，不納入趨勢/變化）"
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(raw, f, ensure_ascii=False, indent=2)
-
-        pc = raw.get("provinceCounts", {})
-        print(f"[OK] 寫入 {out_path}  [{action}]")
-        print(f"  對局={game_id} · 遊戲日={day} · 玩家={len(raw.get('players', []))} · "
-              f"統計={len(raw.get('playerStats', {}))} · 聯盟={len(raw.get('coalitions', []))} · "
-              f"領地記錄={len(pc)}")
-
-        # 3.5) 僅「當日首次報告」寫入對局 meta（切日鐘點 + 我的 ID），供自動化排程與「我」標註使用
-        if is_first:
-            start_info = raw.get("startInfo", {})
-            switch_clock = parse_switch_clock(start_info) or SWITCH_FALLBACK
-            if switch_clock == SWITCH_FALLBACK and start_info:
-                print(f"[WARN] 無法從 GameInfo 推算切日鐘點，暫用預設 {SWITCH_FALLBACK}（不正確可在 games/{game_id}/meta.json 手調）。")
-            my_id = raw.get("myIdCandidate")
-            if my_id is None:
-                my_id = int(os.environ.get("MY_ID", 22))
-            meta = {
-                "gameID": game_id,
-                "switchClock": switch_clock,
-                "myID": my_id,
-                "lastDay": day,
-                "updatedAt": raw.get("reportedAt"),
-            }
-            with open(os.path.join(game_dir, "meta.json"), "w", encoding="utf-8") as mf:
-                json.dump(meta, mf, ensure_ascii=False, indent=2)
-            print(f"[OK] 對局 meta：切日鐘點={switch_clock} · 我的ID={my_id}")
-
-        # 4) 產出可檢視 HTML
-        if not os.path.exists(OUT_PY):
-            print("[WARN] 找不到 build_dashboard.py，跳過 HTML 產出。")
-        elif is_first and not no_build:
-            # 當日首次報告 → 重建主面板（含該日基準，會出現在趨勢/變化）
-            print("[..] 重建主面板…")
-            try:
-                subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"[WARN] 主面板重建失敗：{e}")
-        elif not is_first:
-            # 額外報告 → 產生獨立快照 HTML（不動主面板、不進趨勢）
-            if no_build:
-                print(f"[INFO] --no-build：額外報告不產生獨立 HTML。")
-            else:
-                print("[..] 產生額外報告獨立 HTML…")
+            # 4) 產出可檢視 HTML
+            if not os.path.exists(OUT_PY):
+                print("[WARN] 找不到 build_dashboard.py，跳過 HTML 產出。")
+            elif is_first and not no_build:
+                # 當日首次報告 → 重建主面板（含該日基準，會出現在趨勢/變化）
+                print("[..] 重建主面板…")
                 try:
-                    subprocess.run([sys.executable, OUT_PY, "--single", out_path], cwd=BASE, check=True)
+                    subprocess.run([sys.executable, OUT_PY], cwd=BASE, check=True)
                 except subprocess.CalledProcessError as e:
-                    print(f"[WARN] 額外報告 HTML 產生失敗：{e}")
-        return True
+                    print(f"[WARN] 主面板重建失敗：{e}")
+            elif not is_first:
+                # 額外報告 → 產生獨立快照 HTML（不動主面板、不進趨勢）
+                if no_build:
+                    print(f"[INFO] --no-build：額外報告不產生獨立 HTML。")
+                else:
+                    print("[..] 產生額外報告獨立 HTML…")
+                    try:
+                        subprocess.run([sys.executable, OUT_PY, "--single", out_path], cwd=BASE, check=True)
+                    except subprocess.CalledProcessError as e:
+                        print(f"[WARN] 額外報告 HTML 產生失敗：{e}")
+            return True
+        finally:
+            _closed = True
+            if reader_task is not None:
+                reader_task.cancel()
+                try:
+                    await asyncio.wait_for(reader_task, timeout=1.0)
+                except BaseException:
+                    pass
 
 
 def main():
