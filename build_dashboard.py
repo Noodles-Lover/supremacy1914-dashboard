@@ -60,7 +60,7 @@ def get_province_counts(day_data):
     return {str(k): v for k, v in day_data.get("provinceCounts", {}).items()}
 
 
-def build_payload(day_data, my_id=None, prev_provinces=None):
+def build_payload(day_data, my_id=None, prev_provinces=None, prev_relations=None):
     my_id = my_id if my_id is not None else MY_ID
     players = day_data.get("players", [])
     player_lookup = {p["id"]: p for p in players}
@@ -109,16 +109,24 @@ def build_payload(day_data, my_id=None, prev_provinces=None):
         s = get_stats(p["id"])
         allies, enemies = [], []
         rels = relations.get("neighborRelations", {}).get(str(p["id"]), {})
+        # 前一天外交關係：用於標註「本日新成為敵對」的玩家（上一天非敵對、本日敵對 → 粗體）
+        prev_rels = {}
+        if prev_relations:
+            prev_rels = prev_relations.get("neighborRelations", {}).get(str(p["id"]), {})
         for trg, rt in rels.items():
             t = player_lookup.get(int(trg))
             if not t or int(trg) == p["id"]:
                 continue
             if t.get("ai"):   # 跳過非人類（AI）玩家，外交關係只列人類
                 continue
+            # 去除已亡國玩家：當日領地數為 0 者不列於任何外交關係
+            if province_counts.get(str(int(trg)), 0) <= 0:
+                continue
             if rt == 4:
-                allies.append(t)
+                allies.append({"id": t["id"], "nation": t["nation"], "name": t["name"]})
             elif rt == -2:
-                enemies.append(t)
+                was_enemy = prev_rels.get(str(trg)) == -2
+                enemies.append({"id": t["id"], "nation": t["nation"], "name": t["name"], "isNew": not was_enemy})
         return {
             "id": p["id"], "name": p["name"], "nation": p["nation"], "team": p["team"],
             "score": get_score(p["id"]),
@@ -136,7 +144,7 @@ def build_payload(day_data, my_id=None, prev_provinces=None):
     my_allies = [r for r in all_human if r["id"] in my_ally_ids]
     my_allies.sort(key=lambda r: r["score"], reverse=True)
     for a in my_allies:
-        a["enemy_display"] = [f'{x["nation"]} ({x["name"]})' for x in a["enemies"]]
+        a["enemy_display"] = [{"nation": x["nation"], "name": x["name"], "isNew": x.get("isNew", False)} for x in a["enemies"]]
 
     # ── charts data ──
     by_kda = sorted(all_human, key=lambda r: r["kda"], reverse=True)[:TOP_KDA]
@@ -182,9 +190,18 @@ def build_payload(day_data, my_id=None, prev_provinces=None):
             "score": r["score"], "kills": r["kills"], "losses": r["losses"],
             "kda": r["kda"], "kdaCls": kda_cls(r["kda"]),
             "captured": r["captured"], "lost": r["lost"], "provinces": r["provinces"],
-            "enemies": ", ".join([f'{e["nation"]} ({e["name"]})' for e in r["enemies"]]),
+            "enemies": [{"nation": e["nation"], "name": e["name"], "isNew": e.get("isNew", False)} for e in r["enemies"]],
             "isMe": r["id"] == my_id,
         })
+
+    # ── 亡國名單：前一天領地 > 0，本日領地歸零（或已不在領地統計中）的人類玩家 ──
+    defeated = []
+    if prev_provinces is not None:
+        for pid, cnt in prev_provinces.items():
+            if cnt > 0 and province_counts.get(str(pid), 0) <= 0:
+                p = player_lookup.get(int(pid))
+                if p and not p.get("ai") and p["id"] != 0:
+                    defeated.append({"id": p["id"], "name": p["name"], "nation": p["nation"]})
 
     payload = {
         "meta": {
@@ -200,13 +217,13 @@ def build_payload(day_data, my_id=None, prev_provinces=None):
             "kda": me["kda"], "captured": me["captured"], "lost": me["lost"],
             "provinces": me["provinces"],
             "allies": [{"nation": a["nation"], "name": a["name"]} for a in me["allies"]],
-            "enemies": [{"nation": e["nation"], "name": e["name"]} for e in me["enemies"]],
+            "enemies": [{"nation": e["nation"], "name": e["name"], "isNew": e.get("isNew", False)} for e in me["enemies"]],
         },
         "allies": [
             {"name": a["name"], "nation": a["nation"], "score": a["score"], "kills": a["kills"],
              "losses": a["losses"], "kda": a["kda"], "kdaCls": kda_cls(a["kda"]),
              "captured": a["captured"], "lost": a["lost"], "provinces": a["provinces"],
-             "enemyDisplay": ", ".join(a["enemy_display"]) or "—"}
+             "enemyDisplay": a["enemy_display"]}
             for a in my_allies
         ],
         "charts": {
@@ -219,6 +236,7 @@ def build_payload(day_data, my_id=None, prev_provinces=None):
         "top5Losses": [{"name": r["name"], "nation": r["nation"], "val": r["losses"]} for r in top5_losses],
         "coalitions": coal_detail,
         "tableRows": table_rows,
+        "defeated": defeated,
     }
     return payload
 
@@ -253,13 +271,15 @@ def build_all():
         days = {}
         order = []
         prev_pc = None
+        prev_rel = None
         for df in day_files:
             dd = load_day(df)
             day_num = dd.get("day")
             if day_num is None:
                 continue
-            days[str(day_num)] = build_payload(dd, my_id, prev_provinces=prev_pc)
+            days[str(day_num)] = build_payload(dd, my_id, prev_provinces=prev_pc, prev_relations=prev_rel)
             prev_pc = get_province_counts(dd)
+            prev_rel = dd.get("relations")
             order.append(day_num)
         if not order:
             continue
@@ -311,6 +331,7 @@ def build_single(path):
     my_id = meta.get("myID", int(os.environ.get("MY_ID", 22)))
     # 單檔快照：嘗試載入同對局前一個基準日，套用「前一天領地=0 則移除」規則
     prev_pc = None
+    prev_rel = None
     try:
         all_df = sorted(glob.glob(os.path.join(game_dir, "data", "day_*.json")),
                         key=lambda x: int(re.match(r"day_(\d+)", os.path.basename(x)).group(1)))
@@ -320,10 +341,12 @@ def build_single(path):
             fd = load_day(f)
             if fd.get("day") == day - 1:
                 prev_pc = get_province_counts(fd)
+                prev_rel = fd.get("relations")
                 break
     except Exception:
         prev_pc = None
-    payload = build_payload(day_data, my_id, prev_provinces=prev_pc)
+        prev_rel = None
+    payload = build_payload(day_data, my_id, prev_provinces=prev_pc, prev_relations=prev_rel)
 
     games = {gid: {"gameID": gid, "days": {str(day): payload}, "order": [day], "myID": my_id}}
     gorder = [gid]
@@ -412,7 +435,10 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 .day-control{display:flex;align-items:center;gap:12px;}
 .controls{display:flex;flex-direction:column;gap:11px;align-items:flex-end;}
 .day-label{font-size:0.78rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
-.day-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.day-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:min(66vw,640px);padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
+.day-pills::-webkit-scrollbar{height:6px;}
+.day-pills::-webkit-scrollbar-track{background:transparent;}
+.day-pills::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
 .day-pill{
   padding:9px 17px;border-radius:12px;border:1px solid var(--border);
   background:var(--surface);color:var(--dim);font-family:"Sora";font-weight:700;
@@ -514,6 +540,7 @@ section[id],div[id].section{scroll-margin-top:96px;}
 .tag{display:inline-block;padding:4px 11px;border-radius:11px;font-size:0.76rem;font-weight:600;}
 .tag-ally{background:rgba(63,185,104,0.16);color:var(--green);}
 .tag-war{background:rgba(239,83,80,0.18);color:var(--red);}
+.tag-war.war-new{font-weight:800;box-shadow:0 0 0 2px rgba(239,83,80,0.55), 0 0 14px rgba(239,83,80,0.35);}
 .tag-self{background:var(--accent-soft);color:var(--accent);}
 .tag-team{background:rgba(224,168,90,0.12);color:var(--accent);}
 
@@ -541,6 +568,7 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 .strong{font-weight:600;} .dim{color:var(--dim);} .accent{color:var(--accent);font-weight:700;}
 .green{color:var(--green);} .red{color:var(--red);} .gold{color:var(--gold);}
 .enemy{color:var(--red);font-size:0.8rem;}
+.enemy.war-new{font-weight:800;color:#ff7b78;text-shadow:0 0 10px rgba(239,83,80,0.4);}
 .kda-g{color:var(--green);font-weight:700;} .kda-o{color:var(--text);} .kda-b{color:var(--red);}
 
 /* top5 */
@@ -731,17 +759,21 @@ function heroHtml(d, prevMe){
 function dipHtml(d){
   const m=d.me;
   const ally = m.allies.map(a=>`<span class="tag tag-ally">${esc(a.nation)} (${esc(a.name)})</span>`).join('');
-  const enemy = m.enemies.map(e=>`<span class="tag tag-war">${esc(e.nation)} (${esc(e.name)})</span>`).join('');
+  const enemy = m.enemies.map(e=>`<span class="tag tag-war${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join('');
+  const newCount = m.enemies.filter(e=>e.isNew).length;
   return `<div class="card dip"><h3>我的外交關係</h3>
-    <div class="dip-block"><div class="dip-label ally">盟友 (${m.allies.length}人)</div><div class="tag-row">${ally}</div></div>
-    <div class="dip-block"><div class="dip-label war">敵對 (${m.enemies.length}人)</div><div class="tag-row">${enemy}</div></div>
+    <div class="dip-block"><div class="dip-label ally">盟友 (${m.allies.length}人)</div><div class="tag-row">${ally||'—'}</div></div>
+    <div class="dip-block"><div class="dip-label war">敵對 (${m.enemies.length}人${newCount?' · 紅框為本日新敵對':''})</div><div class="tag-row">${enemy||'—'}</div></div>
   </div>`;
 }
 function allyHtml(d){
-  const rows = d.allies.map(a=>`<tr><td class="strong">${esc(a.name)}</td><td class="dim">${esc(a.nation)}</td>
+  const rows = d.allies.map(a=>{
+    const ed = (a.enemyDisplay||[]).map(e=>`<span class="enemy${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join('、');
+    return `<tr><td class="strong">${esc(a.name)}</td><td class="dim">${esc(a.nation)}</td>
     <td class="accent">${a.score}</td><td class="green">${a.kills}</td><td class="red">${a.losses}</td>
     <td class="${a.kdaCls}">${a.kda}</td><td class="gold">${a.captured}</td><td class="dim">${a.lost}</td>
-    <td>${a.provinces}</td><td class="enemy">${esc(a.enemyDisplay)}</td></tr>`).join('');
+    <td>${a.provinces}</td><td class="enemy">${ed||'—'}</td></tr>`;
+  }).join('');
   return `<div class="card ally-intel"><h3>盟友情報（按分數降序）</h3>
     <div class="table-wrap"><table class="dt"><thead><tr>
       <th>玩家</th><th>國家</th><th>分數</th><th>擊殺</th><th>陣亡</th><th>擊殺比</th><th>佔領</th><th>被佔領</th><th>領地</th><th>敵對</th>
@@ -765,13 +797,17 @@ function coalHtml(d){
     <span class="coal-score" style="color:${c.solid}">${c.score}</span></div>`).join('');
   return `<div class="card coal-detail"><h3>聯盟明細（共 ${d.coalitions.length} 個）</h3>${rows}</div>`;
 }
+function enemyTags(arr){
+  if(!arr || !arr.length) return '—';
+  return arr.map(e=>`<span class="enemy${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join('、');
+}
 function buildTable(rows){
   const head = HEADERS.map((h,i)=>`<th onclick="sortTable(${i})">${h}${i===sortCol?' '+(sortAsc?'▲':'▼'):''}</th>`).join('');
   const body = rows.map(r=>`<tr class="${r.isMe?'me':''}"><td>${r.id}</td><td>${esc(r.name)}</td>
     <td class="dim">${esc(r.nation)}</td><td>${esc(r.teamLabel)}</td><td class="accent">${r.score}</td>
     <td>${r.kills}</td><td>${r.losses}</td><td class="${r.kdaCls}">${r.kda}</td>
     <td>${r.captured}</td><td class="dim">${r.lost}</td><td>${r.provinces}</td>
-    <td class="enemy">${esc(r.enemies)||'—'}</td></tr>`).join('');
+    <td class="enemy">${enemyTags(r.enemies)}</td></tr>`).join('');
   document.getElementById('fullTable').innerHTML =
     `<div class="card"><h3>全部人類玩家（按分數降序，${rows.length}人）</h3>
      <div class="table-wrap"><table class="dt"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
@@ -824,6 +860,8 @@ function render(day){
   buildTable(currentRows);
   buildCharts(d);
   document.querySelectorAll('.day-pill').forEach(b=>b.classList.toggle('active',+b.textContent===day));
+  const ap=[...document.querySelectorAll('#dayPills .day-pill')].find(b=>+b.textContent===day);
+  if(ap) ap.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
 
 function buildLeaderboard(d, pDay){
@@ -849,7 +887,14 @@ function buildLeaderboard(d, pDay){
       <span class="lb-name"><span class="nm">${esc(m.name)}</span><span class="nt">${esc(m.nation||'')}</span></span>
       <span class="lb-delta up">▲${m.dv}</span></li>`).join('')+`</ul>`;
   };
-  lb.innerHTML=card('分數增幅排行',listHtml(scoreMoves))+card('領地增幅排行',listHtml(provMoves))+card('聯盟分數增幅排行',listHtml(coalMoves));
+  const defeated=(d.defeated||[]);
+  const defeatedCard=`<div class="lb-card" style="grid-column:1/-1;border-color:rgba(239,83,80,0.35);background:linear-gradient(135deg,rgba(239,83,80,0.10),rgba(20,26,40,0.5));"><h4 style="color:var(--red)">亡國 · 本日領地歸零的玩家</h4>${defeated.length
+    ? `<ul class="lb-list">`+defeated.map(m=>`<li>
+        <span class="lb-rank" style="background:rgba(239,83,80,0.2);color:var(--red)">✕</span>
+        <span class="lb-name"><span class="nm">${esc(m.name)}</span><span class="nt">${esc(m.nation||'')}</span></span>
+      </li>`).join('')+`</ul>`
+    : `<div class="lb-empty">本日無亡國</div>`}</div>`;
+  lb.innerHTML=card('分數增幅排行',listHtml(scoreMoves))+card('領地增幅排行',listHtml(provMoves))+card('聯盟分數增幅排行',listHtml(coalMoves))+defeatedCard;
 }
 
 const TREND_METRICS=[
