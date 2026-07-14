@@ -23,7 +23,10 @@ import subprocess
 import datetime
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-VENV_PY = r"C:\Users\acer\.workbuddy\binaries\python\envs\default\Scripts\python.exe"
+# 使用啟動本腳本的直譯器（自動跟隨 runner.bat 或手動執行時所用的 python），
+# 避免硬編碼 venv 路徑在被 WorkBuddy 清理後導致 [WinError 2]。
+# 註：排程由 runner.bat 確保用含 websockets 的 venv 啟動，故 sys.executable 必含依賴。
+VENV_PY = sys.executable
 EXTRACT = os.path.join(BASE, "extract_day.py")
 
 try:
