@@ -83,7 +83,7 @@ def build_payload(day_data, my_id=None, prev_provinces=None, prev_relations=None
 
     def team_label(tid):
         if not tid:
-            return "無聯盟"
+            return None
         return team_to_name.get(tid, f"聯盟 #{tid}")
 
     def get_stats(pid):
@@ -417,14 +417,15 @@ body{
 h1,h2,h3{font-family:"Sora",sans-serif;}
 
 /* header */
-header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:14px;}
+header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:16px 24px;margin-bottom:14px;}
+.brand{flex:1 1 340px;min-width:0;}
 .brand h1{font-size:1.85rem;font-weight:800;letter-spacing:-0.5px;}
 .brand h1 span{color:var(--accent);}
-.brand .sub{color:var(--dim);font-size:0.85rem;margin-top:6px;letter-spacing:0.3px;}
-.day-control{display:flex;align-items:center;gap:12px;}
-.controls{display:flex;flex-direction:column;gap:11px;align-items:flex-end;}
+.brand .sub{color:var(--dim);font-size:0.85rem;margin-top:6px;letter-spacing:0.3px;max-width:100%;overflow-wrap:anywhere;}
+.day-control{display:flex;align-items:center;gap:12px;min-width:0;}
+.controls{display:flex;flex-direction:column;gap:11px;align-items:flex-end;flex:0 0 auto;min-width:0;}
 .day-label{font-size:0.78rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
-.day-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:min(66vw,640px);padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
+.day-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:min(60vw,600px);min-width:0;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
 .day-pills::-webkit-scrollbar{height:6px;}
 .day-pills::-webkit-scrollbar-track{background:transparent;}
 .day-pills::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
@@ -603,7 +604,7 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 <div id="extraBanner"></div>
 <header>
   <div class="brand">
-    <h1>Supremacy <span>1914</span> · 戰況面板</h1>
+    <h1>Supremacy <span>1914</span> · <span data-i18n="brand_panel">戰況面板</span></h1>
     <p class="sub" id="subHeader"></p>
   </div>
   <div class="controls">
@@ -738,7 +739,7 @@ const I18N = {
     table_title:'全部人類玩家（按分數降序，{n} 人）',
     extra_title:'額外報告 · 即時快照',
     extra_d1:'這是遊戲日', extra_d2:'於', extra_d3:'擷取的額外報告，僅供即時查看，', extra_d4:'未納入主面板的趨勢與變化', extra_d5:'。如需歸入趨勢，請以該日首次擷取為基準。',
-    unit_ppl:'人', player_x:'玩家', coal_members:'人 · ', time_unrecorded:'時間未記錄',
+    unit_ppl:'人', player_x:'玩家', coal_members:'人 · ', time_unrecorded:'時間未記錄', brand_panel:'戰況面板', no_coalition:'無聯盟',
   },
   en: {
     lbl_game:'Game', lbl_day:'Game Day', lbl_lang:'Language',
@@ -763,10 +764,10 @@ const I18N = {
     table_title:'All Human Players (by score, {n} players)',
     extra_title:'Extra Report · Live Snapshot',
     extra_d1:'This is an extra report captured on game day', extra_d2:'at', extra_d3:'for live viewing only,', extra_d4:'not included in the main dashboard trends & changes', extra_d5:'. To include it in trends, capture it as the first report of that day.',
-    unit_ppl:'', player_x:'Player', coal_members:' members · ', time_unrecorded:'Time not recorded',
+    unit_ppl:'', player_x:'Player', coal_members:' members · ', time_unrecorded:'Time not recorded', brand_panel:'War Dashboard', no_coalition:'No Coalition',
   },
 };
-let lang = (function(){ try{ return localStorage.getItem('lang') || 'zh'; }catch(e){ return 'zh'; } })();
+let lang = (function(){ try{ return localStorage.getItem('lang') || 'en'; }catch(e){ return 'en'; } })();
 const t = k => (I18N[lang] && I18N[lang][k]!=null) ? I18N[lang][k] : (I18N.zh[k]!=null ? I18N.zh[k] : k);
 const sep = () => lang==='en' ? ', ' : '、';
 function applyStaticText(){
@@ -816,8 +817,8 @@ function heroHtml(d, prevMe){
     <div class="hero-avatar">${m.id}</div>
     <div>
       <div class="hero-name">${esc(m.name)}</div>
-      <div class="hero-nation">${esc(m.nation)} · ${esc(m.coalition)}</div>
-      <div class="hero-tags"><span class="tag tag-self">${t('me_tag')}</span><span class="tag tag-team">${esc(m.coalition)}</span></div>
+      <div class="hero-nation">${esc(m.nation)} · ${m.coalition ? esc(m.coalition) : t('no_coalition')}</div>
+      <div class="hero-tags"><span class="tag tag-self">${t('me_tag')}</span><span class="tag tag-team">${m.coalition ? esc(m.coalition) : t('no_coalition')}</span></div>
       <div class="hero-stats">
         ${stat(m.score,t('hero_score'),'p',dl('score',true))}${stat(m.kills,t('hero_kills'),'g',dl('kills',true))}${stat(m.losses,t('hero_losses'),'r',dl('losses',false))}
         ${stat(m.kda,t('hero_kda'),'b',dl('kda',true))}${stat(m.captured,t('hero_captured'),'b',dl('captured',true))}${stat(m.lost,t('hero_lost'),'o',dl('lost',false))}${stat(m.provinces,t('hero_provinces'),'p',dl('provinces',true))}
@@ -872,7 +873,7 @@ function enemyTags(arr){
 function buildTable(rows){
   const head = HEADERS().map((h,i)=>`<th onclick="sortTable(${i})">${h}${i===sortCol?' '+(sortAsc?'▲':'▼'):''}</th>`).join('');
   const body = rows.map(r=>`<tr class="${r.isMe?'me':''}"><td>${r.id}</td><td>${esc(r.name)}</td>
-    <td class="dim">${esc(r.nation)}</td><td>${esc(r.teamLabel)}</td><td class="accent">${r.score}</td>
+    <td class="dim">${esc(r.nation)}</td><td>${r.teamLabel ? esc(r.teamLabel) : t('no_coalition')}</td><td class="accent">${r.score}</td>
     <td>${r.kills}</td><td>${r.losses}</td><td class="${r.kdaCls}">${r.kda}</td>
     <td>${r.captured}</td><td class="dim">${r.lost}</td><td>${r.provinces}</td>
     <td class="enemy">${enemyTags(r.enemies)}</td></tr>`).join('');
