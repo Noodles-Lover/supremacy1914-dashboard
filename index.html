@@ -46,11 +46,12 @@ header{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-
 .day-control{display:flex;align-items:center;gap:12px;min-width:0;}
 .controls{display:flex;flex-direction:column;gap:11px;align-items:flex-end;flex:0 0 auto;min-width:0;}
 .day-label{font-size:0.78rem;color:var(--dim);letter-spacing:2px;text-transform:uppercase;}
-.day-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:min(60vw,600px);min-width:0;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
+.day-pills{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;max-width:330px;min-width:0;padding-bottom:6px;scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;}
 .day-pills::-webkit-scrollbar{height:6px;}
 .day-pills::-webkit-scrollbar-track{background:transparent;}
 .day-pills::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:3px;}
 .day-pill{
+  flex:0 0 auto;
   padding:9px 17px;border-radius:12px;border:1px solid var(--border);
   background:var(--surface);color:var(--dim);font-family:"Sora";font-weight:700;
   font-size:0.95rem;cursor:pointer;font-variant-numeric:tabular-nums;
