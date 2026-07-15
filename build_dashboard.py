@@ -242,14 +242,14 @@ def build_payload(day_data, my_id=None, prev_provinces=None, prev_relations=None
 
 
 # ── 渲染模板（共用）──
-def render_template(games, gorder, my_ids, banner=""):
+def render_template(games, gorder, my_ids, extra_json="null"):
     games_json = json.dumps(games, ensure_ascii=False)
     gorder_json = json.dumps(gorder)
     return (TEMPLATE
             .replace("__GAMES_JSON__", games_json)
             .replace("__GAME_ORDER_JSON__", gorder_json)
             .replace("__MY_IDS_JSON__", json.dumps(my_ids, ensure_ascii=False))
-            .replace("__EXTRA_BANNER__", banner))
+            .replace("__EXTRA_JSON__", extra_json))
 
 
 # ── 全量建構：讀取所有對局 / 遊戲日基準檔，產生主面板 ──
@@ -302,7 +302,7 @@ def build_all():
         print("[WARN] 找不到任何 games/*/data/day_*.json，僅輸出空白提示頁。")
         return
 
-    html = render_template(GAMES, GAME_ORDER, MY_IDS)
+    html = render_template(GAMES, GAME_ORDER, MY_IDS, "null")
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"[OK] {out_path} ({os.path.getsize(out_path)/1024:.1f} KB)")
@@ -352,25 +352,14 @@ def build_single(path):
     gorder = [gid]
     my_ids = {gid: my_id}
 
-    # 額外報告（同日加時間戳者）加註說明橫幅，避免與主面板基準混淆
+    # 額外報告（同日加時間戳者）標註資訊，改由前端 JS 依語言渲染（i18n）
     reported = day_data.get("reportedAt") or "時間未記錄"
     ts_disp = (reported.replace("T", " ").replace("+08:00", " (GMT+8)")
                if reported != "時間未記錄" else "時間未記錄")
     is_extra = re.match(r"day_\d+_\d{8}_\d{6}\.json$", os.path.basename(path)) is not None
-    if is_extra:
-        banner = (
-            '<div class="card" style="border-color:rgba(224,168,90,0.4);'
-            'background:linear-gradient(135deg,rgba(224,168,90,0.12),rgba(20,26,40,0.5));margin-bottom:26px;">'
-            '<h3 style="margin-bottom:10px;">額外報告 · 即時快照</h3>'
-            '<p style="color:var(--dim);font-size:0.86rem;line-height:1.65;">這是遊戲日 <b style="color:var(--text)">'
-            f'{day}</b> 於 <b style="color:var(--text)">{ts_disp}</b> 擷取的額外報告，僅供即時查看，'
-            '<b style="color:var(--text)">未納入主面板的趨勢與變化</b>。'
-            '如需歸入趨勢，請以該日首次擷取為基準。</p></div>'
-        )
-    else:
-        banner = ""
+    extra_json = json.dumps({"day": day, "ts": ts_disp}, ensure_ascii=False) if is_extra else "null"
 
-    html = render_template(games, gorder, my_ids, banner)
+    html = render_template(games, gorder, my_ids, extra_json)
     out_path = re.sub(r"\.json$", ".html", path)
     with open(out_path, "w", encoding="utf-8") as f:
         f.write(html)
@@ -447,6 +436,12 @@ header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-be
 }
 .day-pill:hover{color:var(--text);border-color:var(--border-strong);}
 .day-pill.active{background:var(--accent);color:#1a1206;border-color:var(--accent);box-shadow:0 8px 22px -8px var(--accent);}
+
+/* language switch */
+.lang-switch{display:flex;align-items:stretch;border:1px solid var(--border);border-radius:11px;overflow:hidden;background:var(--surface);}
+.lang-switch button{background:none;border:none;color:var(--dim);font-family:"Sora";font-weight:700;font-size:0.8rem;padding:8px 15px;cursor:pointer;transition:all .3s cubic-bezier(.16,1,.3,1);white-space:nowrap;}
+.lang-switch button:hover{color:var(--text);}
+.lang-switch button.active{background:var(--accent);color:#1a1206;}
 
 /* zone */
 .zone{margin-top:42px;}
@@ -605,7 +600,7 @@ table.dt{width:100%;border-collapse:collapse;font-size:0.85rem;}
 </head>
 <body>
 <div class="container">
-__EXTRA_BANNER__
+<div id="extraBanner"></div>
 <header>
   <div class="brand">
     <h1>Supremacy <span>1914</span> · 戰況面板</h1>
@@ -613,28 +608,35 @@ __EXTRA_BANNER__
   </div>
   <div class="controls">
     <div class="day-control">
-      <span class="day-label">對局</span>
+      <span class="day-label" data-i18n="lbl_lang">語言</span>
+      <div class="lang-switch" id="langSwitch" role="group" aria-label="language switch">
+        <button type="button" data-lang="zh">中文</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+    </div>
+    <div class="day-control">
+      <span class="day-label" data-i18n="lbl_game">對局</span>
       <div class="day-pills" id="gamePills"></div>
     </div>
     <div class="day-control">
-      <span class="day-label">遊戲日</span>
+      <span class="day-label" data-i18n="lbl_day">遊戲日</span>
       <div class="day-pills" id="dayPills"></div>
     </div>
   </div>
 </header>
 
 <nav class="toc" id="toc">
-  <a href="#sec-me">我的視角</a>
-  <a href="#sec-power">戰力排行</a>
-  <a href="#sec-prov">領土控制</a>
-  <a href="#sec-coal">聯盟動態</a>
-  <a href="#sec-score">分數排行</a>
-  <a href="#sec-all">全部玩家</a>
-  <a href="#sec-trend">趨勢與變化</a>
+  <a href="#sec-me" data-i18n="toc_me">我的視角</a>
+  <a href="#sec-power" data-i18n="toc_power">戰力排行</a>
+  <a href="#sec-prov" data-i18n="toc_prov">領土控制</a>
+  <a href="#sec-coal" data-i18n="toc_coal">聯盟動態</a>
+  <a href="#sec-score" data-i18n="toc_score">分數排行</a>
+  <a href="#sec-all" data-i18n="toc_all">全部玩家</a>
+  <a href="#sec-trend" data-i18n="toc_trend">趨勢與變化</a>
 </nav>
 
 <section class="zone reveal" style="--i:0" id="sec-me">
-  <div class="zone-head"><span class="dot self"></span><h2>我的視角</h2><span class="meta">NoodlesLover</span></div>
+  <div class="zone-head"><span class="dot self"></span><h2 data-i18n="sec_me">我的視角</h2><span class="meta">NoodlesLover</span></div>
   <div class="hero-row">
     <div id="heroCard"></div>
     <div id="dipCard"></div>
@@ -643,51 +645,51 @@ __EXTRA_BANNER__
 </section>
 
 <section class="zone reveal" style="--i:1" id="sec-power">
-  <div class="zone-head"><span class="dot gold"></span><h2>戰力排行</h2><span class="meta" id="globalWhen"></span></div>
+  <div class="zone-head"><span class="dot gold"></span><h2 data-i18n="sec_power">戰力排行</h2><span class="meta" id="globalWhen"></span></div>
   <div class="card chart-card" style="margin-bottom:20px;">
-    <h3>擊殺 / 陣亡 TOP 10（按擊殺比排序）</h3>
+    <h3 data-i18n="h3_kda">擊殺 / 陣亡 TOP 10（按擊殺比排序）</h3>
     <div class="chart-wrap tall"><canvas id="chartKDA"></canvas></div>
   </div>
   <div class="grid-2" id="top5Grid"></div>
 </section>
 
 <section class="zone reveal" style="--i:2" id="sec-prov">
-  <div class="zone-head"><span class="dot gold"></span><h2>領土控制</h2></div>
+  <div class="zone-head"><span class="dot gold"></span><h2 data-i18n="sec_prov">領土控制</h2></div>
   <div class="card chart-card" style="margin-bottom:20px;">
-    <h3>領地數量 TOP 15</h3>
+    <h3 data-i18n="h3_prov">領地數量 TOP 15</h3>
     <div class="chart-wrap tall"><canvas id="chartProv"></canvas></div>
   </div>
 </section>
 
 <section class="zone reveal" style="--i:3" id="sec-coal">
-  <div class="zone-head"><span class="dot gold"></span><h2>聯盟動態</h2></div>
+  <div class="zone-head"><span class="dot gold"></span><h2 data-i18n="sec_coal">聯盟動態</h2></div>
   <div class="card chart-card" style="margin-bottom:20px;">
-    <h3>聯盟分數排行</h3>
+    <h3 data-i18n="h3_coal">聯盟分數排行</h3>
     <div class="chart-wrap med"><canvas id="chartCoal"></canvas></div>
   </div>
   <div id="coalDetail" style="margin-bottom:20px;"></div>
 </section>
 
 <section class="zone reveal" style="--i:4" id="sec-score">
-  <div class="zone-head"><span class="dot gold"></span><h2>分數排行</h2></div>
+  <div class="zone-head"><span class="dot gold"></span><h2 data-i18n="sec_score">分數排行</h2></div>
   <div class="card chart-card" style="margin-bottom:20px;">
-    <h3>分數排行 TOP 15</h3>
+    <h3 data-i18n="h3_score">分數排行 TOP 15</h3>
     <div class="chart-wrap tall"><canvas id="chartScore"></canvas></div>
   </div>
 </section>
 
 <section class="zone reveal" style="--i:5" id="sec-all">
-  <div class="zone-head"><span class="dot gold"></span><h2>全部玩家</h2></div>
+  <div class="zone-head"><span class="dot gold"></span><h2 data-i18n="sec_all">全部玩家</h2></div>
   <div id="fullTable"></div>
 </section>
 
 <section class="zone reveal" style="--i:6" id="sec-trend">
-  <div class="zone-head"><span class="dot gold"></span><h2>趨勢與變化</h2></div>
+  <div class="zone-head"><span class="dot gold"></span><h2 data-i18n="sec_trend">趨勢與變化</h2></div>
   <div id="leaderboard" class="lb-grid" style="margin-bottom:20px;"></div>
   <div class="card chart-card" style="margin-bottom:20px;">
-    <h3>指標隨遊戲日變化</h3>
+    <h3 data-i18n="h3_trend">指標隨遊戲日變化</h3>
     <div class="trend-player">
-      <label for="trendPlayer">玩家</label>
+      <label for="trendPlayer" data-i18n="trend_player_label">玩家</label>
       <select id="trendPlayer"></select>
     </div>
     <div class="trend-pills" id="trendPills"></div>
@@ -701,6 +703,7 @@ __EXTRA_BANNER__
 const GAMES = __GAMES_JSON__;
 const GAME_ORDER = __GAME_ORDER_JSON__;
 const MY_IDS = __MY_IDS_JSON__;
+const EXTRA = __EXTRA_JSON__;
 let currentGame = GAME_ORDER[GAME_ORDER.length-1];
 let DAYS = GAMES[currentGame].days;
 let DAY_ORDER = GAMES[currentGame].order;
@@ -710,15 +713,80 @@ let currentRows = [];
 let sortCol = 4, sortAsc = false;
 const charts = {};
 
+// ── i18n：繁體中文 / English（英文術語對齊 Supremacy 1914 遊戲內用語）──
+const I18N = {
+  zh: {
+    lbl_game:'對局', lbl_day:'遊戲日', lbl_lang:'語言',
+    toc_me:'我的視角', toc_power:'戰力排行', toc_prov:'領土控制', toc_coal:'聯盟動態', toc_score:'分數排行', toc_all:'全部玩家', toc_trend:'趨勢與變化',
+    sec_me:'我的視角', sec_power:'戰力排行', sec_prov:'領土控制', sec_coal:'聯盟動態', sec_score:'分數排行', sec_all:'全部玩家', sec_trend:'趨勢與變化',
+    h3_kda:'擊殺 / 陣亡 TOP 10（按擊殺比排序）',
+    h3_prov:'領地數量 TOP 15', h3_coal:'聯盟分數排行', h3_score:'分數排行 TOP 15', h3_trend:'指標隨遊戲日變化',
+    me_tag:'我', trend_player_label:'玩家',
+    dip_title:'我的外交關係', dip_ally:'盟友', dip_enemy:'敵對', dip_newenemy:'紅框為本日新敵對',
+    ally_title:'盟友情報（按分數降序）',
+    col_id:'ID', col_player:'玩家', col_nation:'國家', col_coal:'聯盟', col_score:'分數', col_kills:'擊殺', col_losses:'陣亡',
+    col_kda:'擊殺比', col_captured:'佔領', col_lost:'被佔領', col_provinces:'領地', col_enemy:'敵對',
+    top5_kills:'擊殺數 TOP 5', top5_losses:'陣亡數 TOP 5',
+    coal_title:'聯盟明細（共 {n} 個）',
+    hero_score:'分數', hero_kills:'擊殺', hero_losses:'陣亡', hero_kda:'擊殺比', hero_captured:'佔領省份', hero_lost:'被佔領', hero_provinces:'領地數',
+    lb_score:'分數增幅排行', lb_prov:'領地增幅排行', lb_coal:'聯盟分數增幅排行',
+    lb_nochange:'暫無變化', lb_needtwo:'需要至少兩個遊戲日才能比較變化',
+    defeated_title:'亡國 · 本日領地歸零的玩家', defeated_none:'本日無亡國',
+    sub_game:'對局 #', sub_map:'地圖：北美洲', sub_players:' 名人類玩家', sub_goal:'目標', sub_vp:'勝利點', sub_reported:'報告時間',
+    chart_kills:'擊殺', chart_losses:'陣亡', chart_prov:'領地數', chart_coalscore:'聯盟分數', chart_score:'分數',
+    trend_score:'分數', trend_kills:'擊殺', trend_losses:'陣亡', trend_provinces:'領地', trend_captured:'佔領', trend_lost:'被佔領',
+    table_title:'全部人類玩家（按分數降序，{n} 人）',
+    extra_title:'額外報告 · 即時快照',
+    extra_d1:'這是遊戲日', extra_d2:'於', extra_d3:'擷取的額外報告，僅供即時查看，', extra_d4:'未納入主面板的趨勢與變化', extra_d5:'。如需歸入趨勢，請以該日首次擷取為基準。',
+    unit_ppl:'人', player_x:'玩家', coal_members:'人 · ', time_unrecorded:'時間未記錄',
+  },
+  en: {
+    lbl_game:'Game', lbl_day:'Game Day', lbl_lang:'Language',
+    toc_me:'My View', toc_power:'Power Ranking', toc_prov:'Territory', toc_coal:'Coalitions', toc_score:'Score Ranking', toc_all:'All Players', toc_trend:'Trends & Changes',
+    sec_me:'My View', sec_power:'Power Ranking', sec_prov:'Territory Control', sec_coal:'Coalition Activity', sec_score:'Score Ranking', sec_all:'All Players', sec_trend:'Trends & Changes',
+    h3_kda:'Top 10 Kills / Losses (by K/D)',
+    h3_prov:'Top 15 Provinces', h3_coal:'Coalition Score Ranking', h3_score:'Top 15 Score', h3_trend:'Metrics over Game Days',
+    me_tag:'Me', trend_player_label:'Player',
+    dip_title:'My Diplomacy', dip_ally:'Allies', dip_enemy:'Hostile', dip_newenemy:'red border = newly hostile today',
+    ally_title:'Ally Intel (by score)',
+    col_id:'ID', col_player:'Player', col_nation:'Nation', col_coal:'Coalition', col_score:'Score', col_kills:'Kills', col_losses:'Losses',
+    col_kda:'K/D', col_captured:'Captured', col_lost:'Lost', col_provinces:'Provinces', col_enemy:'Hostile',
+    top5_kills:'Top 5 Kills', top5_losses:'Top 5 Losses',
+    coal_title:'Coalition Details ({n} total)',
+    hero_score:'Score', hero_kills:'Kills', hero_losses:'Losses', hero_kda:'K/D', hero_captured:'Captured', hero_lost:'Lost', hero_provinces:'Provinces',
+    lb_score:'Top Score Gains', lb_prov:'Top Province Gains', lb_coal:'Top Coalition Score Gains',
+    lb_nochange:'No changes', lb_needtwo:'At least two game days are required to compare changes',
+    defeated_title:'Eliminated · Players who lost all provinces today', defeated_none:'No eliminations today',
+    sub_game:'Game #', sub_map:'Map: North America', sub_players:' human players', sub_goal:'Goal', sub_vp:'Victory Points', sub_reported:'Reported',
+    chart_kills:'Kills', chart_losses:'Losses', chart_prov:'Provinces', chart_coalscore:'Coalition Score', chart_score:'Score',
+    trend_score:'Score', trend_kills:'Kills', trend_losses:'Losses', trend_provinces:'Provinces', trend_captured:'Captured', trend_lost:'Lost',
+    table_title:'All Human Players (by score, {n} players)',
+    extra_title:'Extra Report · Live Snapshot',
+    extra_d1:'This is an extra report captured on game day', extra_d2:'at', extra_d3:'for live viewing only,', extra_d4:'not included in the main dashboard trends & changes', extra_d5:'. To include it in trends, capture it as the first report of that day.',
+    unit_ppl:'', player_x:'Player', coal_members:' members · ', time_unrecorded:'Time not recorded',
+  },
+};
+let lang = (function(){ try{ return localStorage.getItem('lang') || 'zh'; }catch(e){ return 'zh'; } })();
+const t = k => (I18N[lang] && I18N[lang][k]!=null) ? I18N[lang][k] : (I18N.zh[k]!=null ? I18N.zh[k] : k);
+const sep = () => lang==='en' ? ', ' : '、';
+function applyStaticText(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    const v=(I18N[lang] && I18N[lang][k]!=null) ? I18N[lang][k] : I18N.zh[k];
+    if(v!=null) el.textContent=v;
+  });
+  document.documentElement.lang = (lang==='en') ? 'en' : 'zh-Hant';
+}
+
 const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function fmtTime(iso){
-  if(!iso) return '時間未記錄';
+  if(!iso) return t('time_unrecorded');
   const d=new Date(iso);
   if(isNaN(d.getTime())) return iso;
   const p=n=>String(n).padStart(2,'0');
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
-const HEADERS = ['ID','玩家名','國家','聯盟','分數','擊殺','陣亡','擊殺比','佔領','被佔領','領地','敵對'];
+function HEADERS(){ return [t('col_id'),t('col_player'),t('col_nation'),t('col_coal'),t('col_score'),t('col_kills'),t('col_losses'),t('col_kda'),t('col_captured'),t('col_lost'),t('col_provinces'),t('col_enemy')]; }
 const COLS = ['id','name','nation','teamLabel','score','kills','losses','kda','captured','lost','provinces','enemies'];
 
 const baseOpts = {
@@ -749,10 +817,10 @@ function heroHtml(d, prevMe){
     <div>
       <div class="hero-name">${esc(m.name)}</div>
       <div class="hero-nation">${esc(m.nation)} · ${esc(m.coalition)}</div>
-      <div class="hero-tags"><span class="tag tag-self">我</span><span class="tag tag-team">${esc(m.coalition)}</span></div>
+      <div class="hero-tags"><span class="tag tag-self">${t('me_tag')}</span><span class="tag tag-team">${esc(m.coalition)}</span></div>
       <div class="hero-stats">
-        ${stat(m.score,'分數','p',dl('score',true))}${stat(m.kills,'擊殺','g',dl('kills',true))}${stat(m.losses,'陣亡','r',dl('losses',false))}
-        ${stat(m.kda,'擊殺比','b',dl('kda',true))}${stat(m.captured,'佔領省份','b',dl('captured',true))}${stat(m.lost,'被佔領','o',dl('lost',false))}${stat(m.provinces,'領地數','p',dl('provinces',true))}
+        ${stat(m.score,t('hero_score'),'p',dl('score',true))}${stat(m.kills,t('hero_kills'),'g',dl('kills',true))}${stat(m.losses,t('hero_losses'),'r',dl('losses',false))}
+        ${stat(m.kda,t('hero_kda'),'b',dl('kda',true))}${stat(m.captured,t('hero_captured'),'b',dl('captured',true))}${stat(m.lost,t('hero_lost'),'o',dl('lost',false))}${stat(m.provinces,t('hero_provinces'),'p',dl('provinces',true))}
       </div>
     </div></div>`;
 }
@@ -761,22 +829,22 @@ function dipHtml(d){
   const ally = m.allies.map(a=>`<span class="tag tag-ally">${esc(a.nation)} (${esc(a.name)})</span>`).join('');
   const enemy = m.enemies.map(e=>`<span class="tag tag-war${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join('');
   const newCount = m.enemies.filter(e=>e.isNew).length;
-  return `<div class="card dip"><h3>我的外交關係</h3>
-    <div class="dip-block"><div class="dip-label ally">盟友 (${m.allies.length}人)</div><div class="tag-row">${ally||'—'}</div></div>
-    <div class="dip-block"><div class="dip-label war">敵對 (${m.enemies.length}人${newCount?' · 紅框為本日新敵對':''})</div><div class="tag-row">${enemy||'—'}</div></div>
+  return `<div class="card dip"><h3>${t('dip_title')}</h3>
+    <div class="dip-block"><div class="dip-label ally">${t('dip_ally')} (${m.allies.length}${t('unit_ppl')})</div><div class="tag-row">${ally||'—'}</div></div>
+    <div class="dip-block"><div class="dip-label war">${t('dip_enemy')} (${m.enemies.length}${t('unit_ppl')}${newCount?' · '+t('dip_newenemy'):''})</div><div class="tag-row">${enemy||'—'}</div></div>
   </div>`;
 }
 function allyHtml(d){
   const rows = d.allies.map(a=>{
-    const ed = (a.enemyDisplay||[]).map(e=>`<span class="enemy${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join('、');
+    const ed = (a.enemyDisplay||[]).map(e=>`<span class="enemy${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join(sep());
     return `<tr><td class="strong">${esc(a.name)}</td><td class="dim">${esc(a.nation)}</td>
     <td class="accent">${a.score}</td><td class="green">${a.kills}</td><td class="red">${a.losses}</td>
     <td class="${a.kdaCls}">${a.kda}</td><td class="gold">${a.captured}</td><td class="dim">${a.lost}</td>
     <td>${a.provinces}</td><td class="enemy">${ed||'—'}</td></tr>`;
   }).join('');
-  return `<div class="card ally-intel"><h3>盟友情報（按分數降序）</h3>
+  return `<div class="card ally-intel"><h3>${t('ally_title')}</h3>
     <div class="table-wrap"><table class="dt"><thead><tr>
-      <th>玩家</th><th>國家</th><th>分數</th><th>擊殺</th><th>陣亡</th><th>擊殺比</th><th>佔領</th><th>被佔領</th><th>領地</th><th>敵對</th>
+      <th>${t('col_player')}</th><th>${t('col_nation')}</th><th>${t('col_score')}</th><th>${t('col_kills')}</th><th>${t('col_losses')}</th><th>${t('col_kda')}</th><th>${t('col_captured')}</th><th>${t('col_lost')}</th><th>${t('col_provinces')}</th><th>${t('col_enemy')}</th>
     </tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function top5Html(d){
@@ -786,30 +854,30 @@ function top5Html(d){
   const l = d.top5Losses.map((r,i)=>`<li><span class="rank r${i+1}">${i+1}</span>
     <span class="info">${esc(r.name)}<span class="n">${esc(r.nation)}</span></span>
     <span class="val red">${r.val}</span></li>`).join('');
-  return `<div class="card stats"><h3>擊殺數 TOP 5</h3><ul class="top5">${k}</ul></div>
-    <div class="card stats"><h3>陣亡數 TOP 5</h3><ul class="top5">${l}</ul></div>`;
+  return `<div class="card stats"><h3>${t('top5_kills')}</h3><ul class="top5">${k}</ul></div>
+    <div class="card stats"><h3>${t('top5_losses')}</h3><ul class="top5">${l}</ul></div>`;
 }
 function coalHtml(d){
   const rows = d.coalitions.map(c=>`<div class="coal-row${c.isMine?' coal-mine':''}">
     <span class="coal-dot" style="background:${c.solid}"></span>
     <span class="coal-name">${esc(c.name)}${c.isMine?' ★':''}</span>
-    <span class="coal-meta">${c.memberCount}人 · ${esc(c.members)}</span>
+    <span class="coal-meta">${c.memberCount}${t('coal_members')}${esc(c.members)}</span>
     <span class="coal-score" style="color:${c.solid}">${c.score}</span></div>`).join('');
-  return `<div class="card coal-detail"><h3>聯盟明細（共 ${d.coalitions.length} 個）</h3>${rows}</div>`;
+  return `<div class="card coal-detail"><h3>${t('coal_title').replace('{n}', d.coalitions.length)}</h3>${rows}</div>`;
 }
 function enemyTags(arr){
   if(!arr || !arr.length) return '—';
-  return arr.map(e=>`<span class="enemy${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join('、');
+  return arr.map(e=>`<span class="enemy${e.isNew?' war-new':''}">${esc(e.nation)} (${esc(e.name)})</span>`).join(sep());
 }
 function buildTable(rows){
-  const head = HEADERS.map((h,i)=>`<th onclick="sortTable(${i})">${h}${i===sortCol?' '+(sortAsc?'▲':'▼'):''}</th>`).join('');
+  const head = HEADERS().map((h,i)=>`<th onclick="sortTable(${i})">${h}${i===sortCol?' '+(sortAsc?'▲':'▼'):''}</th>`).join('');
   const body = rows.map(r=>`<tr class="${r.isMe?'me':''}"><td>${r.id}</td><td>${esc(r.name)}</td>
     <td class="dim">${esc(r.nation)}</td><td>${esc(r.teamLabel)}</td><td class="accent">${r.score}</td>
     <td>${r.kills}</td><td>${r.losses}</td><td class="${r.kdaCls}">${r.kda}</td>
     <td>${r.captured}</td><td class="dim">${r.lost}</td><td>${r.provinces}</td>
     <td class="enemy">${enemyTags(r.enemies)}</td></tr>`).join('');
   document.getElementById('fullTable').innerHTML =
-    `<div class="card"><h3>全部人類玩家（按分數降序，${rows.length}人）</h3>
+    `<div class="card"><h3>${t('table_title').replace('{n}', rows.length)}</h3>
      <div class="table-wrap"><table class="dt"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div></div>`;
 }
 function sortTable(col){
@@ -825,17 +893,17 @@ function buildCharts(d){
   const cl=id=>document.getElementById(id).getContext('2d');
   const c=d.charts;
   charts.kda=new Chart(cl('chartKDA'),{type:'bar',data:{labels:c.kda.labels,datasets:[
-    {label:'擊殺',data:c.kda.kills,backgroundColor:'rgba(63,185,104,0.78)',borderRadius:3,barThickness:11},
-    {label:'陣亡',data:c.kda.losses,backgroundColor:'rgba(239,83,80,0.55)',borderRadius:3,barThickness:11}
+    {label:t('chart_kills'),data:c.kda.kills,backgroundColor:'rgba(63,185,104,0.78)',borderRadius:3,barThickness:11},
+    {label:t('chart_losses'),data:c.kda.losses,backgroundColor:'rgba(239,83,80,0.55)',borderRadius:3,barThickness:11}
   ]},options:{...baseOpts,indexAxis:'y',plugins:{...baseOpts.plugins,tooltip:{mode:'index'}}}});
   charts.prov=new Chart(cl('chartProv'),{type:'bar',data:{labels:c.prov.labels,datasets:[
-    {label:'領地數',data:c.prov.vals,backgroundColor:'rgba(224,168,90,0.68)',borderRadius:3,barThickness:14}
+    {label:t('chart_prov'),data:c.prov.vals,backgroundColor:'rgba(224,168,90,0.68)',borderRadius:3,barThickness:14}
   ]},options:{...baseOpts,indexAxis:'y',plugins:{legend:{display:false}}}});
   charts.coal=new Chart(cl('chartCoal'),{type:'bar',data:{labels:c.coal.labels,datasets:[
-    {label:'聯盟分數',data:c.coal.scores,backgroundColor:c.coal.colors,borderRadius:4,barThickness:30}
+    {label:t('chart_coalscore'),data:c.coal.scores,backgroundColor:c.coal.colors,borderRadius:4,barThickness:30}
   ]},options:{...baseOpts,indexAxis:'y',plugins:{legend:{display:false}}}});
   charts.score=new Chart(cl('chartScore'),{type:'bar',data:{labels:c.score.labels,datasets:[
-    {label:'分數',data:c.score.vals,backgroundColor:'rgba(232,196,104,0.68)',borderRadius:3,barThickness:14}
+    {label:t('chart_score'),data:c.score.vals,backgroundColor:'rgba(232,196,104,0.68)',borderRadius:3,barThickness:14}
   ]},options:{...baseOpts,indexAxis:'y',plugins:{legend:{display:false}}}});
 }
 function prevDayNum(day){
@@ -848,8 +916,8 @@ function render(day){
   const pDay=prevDayNum(day);
   const prevMe = pDay!==null ? DAYS[pDay].me : null;
   const gid = GAMES[currentGame].gameID;
-  document.getElementById('subHeader').textContent=`對局 #${gid} · 地圖：北美洲 · ${d.meta.playerCount} 名人類玩家 · 目標 ${d.meta.vp} 勝利點 · 報告時間 ${fmtTime(d.meta.reportedAt)}`;
-  document.getElementById('globalWhen').textContent=`對局 #${gid} · 遊戲日 ${d.meta.day} · 報告時間 ${fmtTime(d.meta.reportedAt)}`;
+  document.getElementById('subHeader').textContent=`${t('sub_game')}${gid} · ${t('sub_map')} · ${d.meta.playerCount}${t('sub_players')} · ${t('sub_goal')} ${d.meta.vp} ${t('sub_vp')} · ${t('sub_reported')} ${fmtTime(d.meta.reportedAt)}`;
+  document.getElementById('globalWhen').textContent=`${t('sub_game')}${gid} · ${t('lbl_day')} ${d.meta.day} · ${t('sub_reported')} ${fmtTime(d.meta.reportedAt)}`;
   document.getElementById('heroCard').innerHTML=heroHtml(d, prevMe);
   document.getElementById('dipCard').innerHTML=dipHtml(d);
   document.getElementById('allyIntel').innerHTML=allyHtml(d);
@@ -864,10 +932,18 @@ function render(day){
   if(ap) ap.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
 
+function renderExtraBanner(){
+  const el=document.getElementById('extraBanner');
+  if(!EXTRA){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="card" style="border-color:rgba(224,168,90,0.4);background:linear-gradient(135deg,rgba(224,168,90,0.12),rgba(20,26,40,0.5));margin-bottom:26px;">
+    <h3>${t('extra_title')}</h3>
+    <p style="color:var(--dim);font-size:0.86rem;line-height:1.65;">${t('extra_d1')} <b style="color:var(--text)">${EXTRA.day}</b> ${t('extra_d2')} <b style="color:var(--text)">${EXTRA.ts}</b> ${t('extra_d3')}<b style="color:var(--text)">${t('extra_d4')}</b>。${t('extra_d5')}</p></div>`;
+}
+
 function buildLeaderboard(d, pDay){
   const lb=document.getElementById('leaderboard');
   if(pDay===null){
-    lb.innerHTML=`<div class="card" style="grid-column:1/-1;text-align:center;color:var(--dim);padding:34px;">需要至少兩個遊戲日才能比較變化</div>`;
+    lb.innerHTML=`<div class="card" style="grid-column:1/-1;text-align:center;color:var(--dim);padding:34px;">${t('lb_needtwo')}</div>`;
     return;
   }
   const prevRows={}; DAYS[pDay].tableRows.forEach(r=>prevRows[r.id]=r);
@@ -881,29 +957,29 @@ function buildLeaderboard(d, pDay){
     .filter(x=>x.dv>0).sort((a,b)=>b.dv-a.dv);
   const card=(title,list)=>`<div class="lb-card"><h4>${title}</h4>${list}</div>`;
   const listHtml=(moves)=>{
-    if(!moves.length) return `<div class="lb-empty">暫無變化</div>`;
+    if(!moves.length) return `<div class="lb-empty">${t('lb_nochange')}</div>`;
     return `<ul class="lb-list">`+moves.map((m,i)=>`<li>
       <span class="lb-rank ${i<3?'r'+(i+1):''}">${i+1}</span>
       <span class="lb-name"><span class="nm">${esc(m.name)}</span><span class="nt">${esc(m.nation||'')}</span></span>
       <span class="lb-delta up">▲${m.dv}</span></li>`).join('')+`</ul>`;
   };
   const defeated=(d.defeated||[]);
-  const defeatedCard=`<div class="lb-card" style="grid-column:1/-1;border-color:rgba(239,83,80,0.35);background:linear-gradient(135deg,rgba(239,83,80,0.10),rgba(20,26,40,0.5));"><h4 style="color:var(--red)">亡國 · 本日領地歸零的玩家</h4>${defeated.length
+  const defeatedCard=`<div class="lb-card" style="grid-column:1/-1;border-color:rgba(239,83,80,0.35);background:linear-gradient(135deg,rgba(239,83,80,0.10),rgba(20,26,40,0.5));"><h4 style="color:var(--red)">${t('defeated_title')}</h4>${defeated.length
     ? `<ul class="lb-list">`+defeated.map(m=>`<li>
         <span class="lb-rank" style="background:rgba(239,83,80,0.2);color:var(--red)">✕</span>
         <span class="lb-name"><span class="nm">${esc(m.name)}</span><span class="nt">${esc(m.nation||'')}</span></span>
       </li>`).join('')+`</ul>`
-    : `<div class="lb-empty">本日無亡國</div>`}</div>`;
-  lb.innerHTML=card('分數增幅排行',listHtml(scoreMoves))+card('領地增幅排行',listHtml(provMoves))+card('聯盟分數增幅排行',listHtml(coalMoves))+defeatedCard;
+    : `<div class="lb-empty">${t('defeated_none')}</div>`}</div>`;
+  lb.innerHTML=card(t('lb_score'),listHtml(scoreMoves))+card(t('lb_prov'),listHtml(provMoves))+card(t('lb_coal'),listHtml(coalMoves))+defeatedCard;
 }
 
 const TREND_METRICS=[
-  {key:'score',label:'分數',color:'rgba(224,168,90,0.95)',fill:'rgba(224,168,90,0.12)'},
-  {key:'kills',label:'擊殺',color:'rgba(63,185,104,0.95)',fill:'rgba(63,185,104,0.12)'},
-  {key:'losses',label:'陣亡',color:'rgba(239,83,80,0.95)',fill:'rgba(239,83,80,0.12)'},
-  {key:'provinces',label:'領地',color:'rgba(120,170,255,0.95)',fill:'rgba(120,170,255,0.12)'},
-  {key:'captured',label:'佔領',color:'rgba(232,196,104,0.95)',fill:'rgba(232,196,104,0.12)'},
-  {key:'lost',label:'被佔領',color:'rgba(255,140,80,0.95)',fill:'rgba(255,140,80,0.12)'},
+  {key:'score',tk:'trend_score',color:'rgba(224,168,90,0.95)',fill:'rgba(224,168,90,0.12)'},
+  {key:'kills',tk:'trend_kills',color:'rgba(63,185,104,0.95)',fill:'rgba(63,185,104,0.12)'},
+  {key:'losses',tk:'trend_losses',color:'rgba(239,83,80,0.95)',fill:'rgba(239,83,80,0.12)'},
+  {key:'provinces',tk:'trend_provinces',color:'rgba(120,170,255,0.95)',fill:'rgba(120,170,255,0.12)'},
+  {key:'captured',tk:'trend_captured',color:'rgba(232,196,104,0.95)',fill:'rgba(232,196,104,0.12)'},
+  {key:'lost',tk:'trend_lost',color:'rgba(255,140,80,0.95)',fill:'rgba(255,140,80,0.12)'},
 ];
 let trendMetric='score';
 let trendChart=null;
@@ -911,7 +987,7 @@ let trendPid=MY_ID;
 function playerName(pid){
   const rows=DAYS[DAY_ORDER[DAY_ORDER.length-1]].tableRows;
   const r=rows.find(x=>x.id===pid);
-  return r ? `${r.name} (${r.nation})` : `玩家 ${pid}`;
+  return r ? `${r.name} (${r.nation})` : `${t('player_x')} ${pid}`;
 }
 function trendSeries(key, pid){
   return DAY_ORDER.map(day=>{
@@ -925,21 +1001,21 @@ function buildTrendChart(){
   const pid=+document.getElementById('trendPlayer').value;
   trendChart=new Chart(document.getElementById('chartTrend').getContext('2d'),{
     type:'line',
-    data:{labels:DAY_ORDER,datasets:[{label:`${m.label} · ${playerName(pid)}`,data:trendSeries(m.key,pid),borderColor:m.color,backgroundColor:m.fill,
+    data:{labels:DAY_ORDER,datasets:[{label:`${t(m.tk)} · ${playerName(pid)}`,data:trendSeries(m.key,pid),borderColor:m.color,backgroundColor:m.fill,
       borderWidth:2.5,tension:0.35,fill:true,pointRadius:4,pointBackgroundColor:m.color,pointBorderColor:'#0c0f16',pointBorderWidth:2}]},
     options:{...baseOpts,plugins:{legend:{display:false},tooltip:{mode:'index',intersect:false}},
       scales:{x:{ticks:{color:'#9aa3b6'},grid:{color:'rgba(255,255,255,0.07)'}},
              y:{ticks:{color:'#9aa3b6',font:{size:11}},grid:{color:'rgba(255,255,255,0.07)'}}}}
   });
   const pc=document.getElementById('trendPills');
-  pc.innerHTML=TREND_METRICS.map(m=>`<button class="trend-pill${m.key===trendMetric?' active':''}" data-k="${m.key}">${m.label}</button>`).join('');
+  pc.innerHTML=TREND_METRICS.map(m=>`<button class="trend-pill${m.key===trendMetric?' active':''}" data-k="${m.key}">${t(m.tk)}</button>`).join('');
   pc.querySelectorAll('.trend-pill').forEach(b=>b.onclick=()=>{
     trendMetric=b.dataset.k;
     pc.querySelectorAll('.trend-pill').forEach(x=>x.classList.toggle('active',x.dataset.k===trendMetric));
     const mm=TREND_METRICS.find(x=>x.key===trendMetric);
     const pid=+document.getElementById('trendPlayer').value;
     const ds=trendChart.data.datasets[0];
-    ds.label=`${mm.label} · ${playerName(pid)}`; ds.data=trendSeries(mm.key,pid); ds.borderColor=mm.color; ds.backgroundColor=mm.fill; ds.pointBackgroundColor=mm.color;
+    ds.label=`${t(mm.tk)} · ${playerName(pid)}`; ds.data=trendSeries(mm.key,pid); ds.borderColor=mm.color; ds.backgroundColor=mm.fill; ds.pointBackgroundColor=mm.color;
     trendChart.update();
   });
 }
@@ -1001,6 +1077,21 @@ const spy=new IntersectionObserver(entries=>{
 },{rootMargin:'-45% 0px -50% 0px',threshold:0});
 document.querySelectorAll('section[id]').forEach(s=>spy.observe(s));
 
+// ── 語言切換：切換後重新渲染所有動態區塊（靜態文字經 data-i18n 同步）──
+const langBtns=[...document.querySelectorAll('#langSwitch button')];
+function setLang(l){
+  lang=l;
+  try{ localStorage.setItem('lang', l); }catch(e){}
+  langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===l));
+  applyStaticText();
+  renderExtraBanner();
+  render(currentDay);
+  buildTrendChart();
+}
+langBtns.forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
+langBtns.forEach(b=>b.classList.toggle('active', b.dataset.lang===lang));
+applyStaticText();
+renderExtraBanner();
 render(currentDay);
 buildTrendChart();
 </script>
