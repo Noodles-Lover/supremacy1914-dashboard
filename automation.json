@@ -1,5 +1,5 @@
 {
   "scheduleTime": "15:55",
   "retryMinutes": 10,
-  "retryWindowHours": 1
+  "retryWindowHours": 4
 }
