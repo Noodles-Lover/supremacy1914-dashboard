@@ -20,6 +20,7 @@ import sys
 import json
 import subprocess
 import datetime
+import tempfile
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 VENV_PY = r"C:\Users\acer\.workbuddy\binaries\python\envs\default\Scripts\python.exe"
@@ -35,6 +36,111 @@ except Exception:
 
 def log(m):
     print(m, flush=True)
+
+
+def get_username():
+    """取得目前登入使用者（DOMAIN\\user 或 user@domain），用於任務主體。"""
+    try:
+        out = subprocess.run(["whoami"], capture_output=True, text=True)
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip()
+    except Exception:
+        pass
+    return os.environ.get("USERNAME", "SYSTEM")
+
+
+def build_task_xml(schedule_time, runner_path, username):
+    """產生一個健壯的 Windows 任務計劃器 XML 定義。
+
+    關鍵設定（解決排程靜默失效）：
+      - StartWhenAvailable=true      ：錯過排程（如筆電休眠喚醒）後盡快補跑
+      - DisallowStartIfOnBatteries=false ：即便用電池也照常執行
+      - StopIfGoingOnBatteries=false      ：切到電池不中途中止
+      - RestartOnFailure（3 次/間隔 1 分）：啟動失敗自動重試
+      - RunOnlyIfLoggedOn=true           ：使用者已登入即執行（免存密碼）
+    """
+    today = datetime.date.today().isoformat()
+    start = f"{today}T{schedule_time}:00"
+    xml = f'''<?xml version="1.0" encoding="UTF-16"?>
+<Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
+  <RegistrationInfo>
+    <Date>{today}T00:00:00</Date>
+    <Author>{username}</Author>
+    <Description>Supremacy 1914 每日擷取與部署（由 runner.bat 執行）</Description>
+  </RegistrationInfo>
+  <Triggers>
+    <CalendarTrigger>
+      <StartBoundary>{start}</StartBoundary>
+      <Enabled>true</Enabled>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
+  </Triggers>
+  <Principals>
+    <Principal id="Author">
+      <UserId>{username}</UserId>
+      <LogonType>InteractiveToken</LogonType>
+      <RunLevel>LeastPrivilege</RunLevel>
+    </Principal>
+  </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <AllowHardTerminate>true</AllowHardTerminate>
+    <StartWhenAvailable>true</StartWhenAvailable>
+    <RunOnlyIfLoggedOn>true</RunOnlyIfLoggedOn>
+    <ExecutionTimeLimit>PT1H</ExecutionTimeLimit>
+    <Priority>7</Priority>
+    <RestartOnFailure>
+      <Interval>PT1M</Interval>
+      <Count>3</Count>
+    </RestartOnFailure>
+  </Settings>
+  <Actions Context="Author">
+    <Exec>
+      <Command>cmd.exe</Command>
+      <Arguments>/c "{runner_path}"</Arguments>
+    </Exec>
+  </Actions>
+</Task>'''
+    return xml
+
+
+def register_task(schedule_time):
+    """用 XML 定義註冊/覆寫 Supremacy1914Daily 任務；失敗則回退簡易 /Create。"""
+    username = get_username()
+    xml = build_task_xml(schedule_time, RUNNER, username)
+    fd, tmp = tempfile.mkstemp(suffix=".xml", prefix="s1914_task_")
+    os.close(fd)
+    try:
+        # schtasks /Create /XML 需要 UTF-16 LE（含 BOM）
+        with open(tmp, "w", encoding="utf-16") as f:
+            f.write(xml)
+        res = subprocess.run(
+            ["schtasks", "/Create", "/TN", "Supremacy1914Daily", "/XML", tmp, "/F"],
+            capture_output=True, text=True)
+        if res.returncode == 0:
+            log(f"[OK] 已用健壯 XML 定義註冊工作排程 Supremacy1914Daily（每日 {schedule_time}）。")
+            log("     關鍵設定：喚醒補跑 / 允許電池執行 / 啟動失敗自動重試 3 次。")
+            return True
+        log(f"[WARN] XML 註冊失敗：{res.stderr.strip() or res.stdout.strip()}；回退簡易註冊…")
+    finally:
+        try:
+            os.remove(tmp)
+        except Exception:
+            pass
+    # 回退：簡易註冊（仍可用，但無電池/補跑強化）
+    res = subprocess.run(
+        ["schtasks", "/Create", "/TN", "Supremacy1914Daily",
+         "/TR", f'cmd /c "{RUNNER}"', "/SC", "DAILY", "/ST", schedule_time, "/F"],
+        capture_output=True, text=True)
+    if res.returncode == 0:
+        log(f"[OK] 已註冊工作排程 Supremacy1914Daily（每日 {schedule_time}，簡易模式）。")
+        return True
+    log(f"[ERR] 註冊失敗：{res.stderr.strip()}\n可手動執行：schtasks /Create /TN Supremacy1914Daily /TR \"cmd /c {RUNNER}\" /SC DAILY /ST {schedule_time} /F")
+    return False
 
 
 def main():
@@ -80,14 +186,8 @@ def main():
     st = cfg.get("scheduleTime", "17:05")
     log(f"排程時間：每日 {st}（來源：automation.json 手動設定）")
 
-    # 2) 註冊 Windows 工作排程器
-    task = ["schtasks", "/Create", "/TN", "Supremacy1914Daily",
-            "/TR", f'cmd /c "{RUNNER}"', "/SC", "DAILY", "/ST", st, "/F"]
-    res = subprocess.run(task, capture_output=True, text=True)
-    if res.returncode == 0:
-        log(f"[OK] 已註冊工作排程 Supremacy1914Daily（每日 {st} 執行 runner.bat）。")
-    else:
-        log(f"[ERR] 註冊失敗：{res.stderr}\n可手動執行：{' '.join(task)}")
+    # 2) 註冊 Windows 工作排程器（用健壯 XML 定義，避免靜默失效）
+    register_task(st)
 
     # 3) 推送認證：SSH 優先（推薦，無需 PAT）
     #    remote 已是 SSH（git@ / ssh://）即表示用 SSH key 部署，無需任何憑證設定。

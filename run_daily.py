@@ -92,10 +92,13 @@ def reregister_if_needed():
                 if len(parts) == 2:
                     cur = parts[1].strip()[-5:]  # HH:MM
         if cur and cur != st:
-            subprocess.run(["schtasks", "/Create", "/TN", "Supremacy1914Daily",
-                            "/TR", f'cmd /c "{os.path.join(BASE, "runner.bat")}"',
-                            "/SC", "DAILY", "/ST", st, "/F"], capture_output=True, text=True)
-            log(f"偵測到 automation.json 排程時間 {st} 與現有 {cur} 不同，已重註冊排程。")
+            # 複用 setup_automation 的健壯 XML 註冊，避免重建出脆弱任務
+            try:
+                import setup_automation
+                setup_automation.register_task(st)
+                log(f"偵測到 automation.json 排程時間 {st} 與現有 {cur} 不同，已用健壯設定重註冊排程。")
+            except Exception as e:
+                log(f"排程重註冊失敗（可忽略，下次手動跑 setup_automation.py 即可）：{e}")
     except Exception as e:
         log(f"排程重註冊檢查失敗（可忽略）：{e}")
 
