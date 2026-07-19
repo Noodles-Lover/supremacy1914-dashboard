@@ -1,0 +1,2525 @@
+{
+  "day": 14,
+  "victoryPoints": 1000,
+  "players": [
+    {
+      "id": 0,
+      "name": "player0",
+      "nation": "",
+      "team": 0,
+      "color": "rgba(192,192,192,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 1,
+      "name": "erebus1",
+      "nation": "Alaska",
+      "team": 0,
+      "color": "rgba(214,70,241,255)",
+      "capital": 2097,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 2,
+      "name": "Amole Manuel Fort",
+      "nation": "Old Crow",
+      "team": 0,
+      "color": "rgba(83,81,84,255)",
+      "capital": 2633,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 3,
+      "name": "George Black",
+      "nation": "Dawson",
+      "team": 0,
+      "color": "rgba(188,183,183,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 4,
+      "name": "DavidRule",
+      "nation": "Northwest Territories",
+      "team": 2,
+      "color": "rgba(64,231,231,255)",
+      "capital": 2599,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 5,
+      "name": "Ten Piece",
+      "nation": "British Columbia",
+      "team": 0,
+      "color": "rgba(79,233,102,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 6,
+      "name": "James Dunmir",
+      "nation": "Athabasca Landing",
+      "team": 0,
+      "color": "rgba(181,181,181,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 7,
+      "name": "Porter Welch",
+      "nation": "Arrowhead",
+      "team": 0,
+      "color": "rgba(123,123,123,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 8,
+      "name": "Vijay_76",
+      "nation": "Alberta",
+      "team": 0,
+      "color": "rgba(203,236,91,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 9,
+      "name": "George Norr Chuk",
+      "nation": "Fort Enterprise",
+      "team": 0,
+      "color": "rgba(195,188,188,255)",
+      "capital": 2612,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 10,
+      "name": "George Patton Mackenzie",
+      "nation": "Fort Reliance",
+      "team": 0,
+      "color": "rgba(141,137,137,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 11,
+      "name": "Frederick E. Harrison",
+      "nation": "Saskatoon",
+      "team": 0,
+      "color": "rgba(112,110,110,255)",
+      "capital": 2381,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 12,
+      "name": "Ha8iiiiiiooii",
+      "nation": "Saskatchewan",
+      "team": 0,
+      "color": "rgba(185,71,233,255)",
+      "capital": 2389,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 13,
+      "name": "user8852983",
+      "nation": "Nunavut",
+      "team": 2,
+      "color": "rgba(110,240,46,255)",
+      "capital": 2554,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 14,
+      "name": "Arthur Lewis Sifton",
+      "nation": "Victoria Islands",
+      "team": 0,
+      "color": "rgba(162,153,153,255)",
+      "capital": 2577,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 15,
+      "name": "Albert Grey",
+      "nation": "Baffin Island",
+      "team": 0,
+      "color": "rgba(108,108,108,255)",
+      "capital": 2561,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 16,
+      "name": "Nightfury777",
+      "nation": "Manitoba",
+      "team": 2,
+      "color": "rgba(70,171,241,255)",
+      "capital": 2399,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 17,
+      "name": "Chris Padding",
+      "nation": "Winnipeg",
+      "team": 0,
+      "color": "rgba(172,162,162,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 18,
+      "name": "John Thomas Brett",
+      "nation": "Kenora",
+      "team": 0,
+      "color": "rgba(127,120,120,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 19,
+      "name": "Zachhh93",
+      "nation": "West Ontario",
+      "team": 0,
+      "color": "rgba(236,213,85,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 20,
+      "name": "Sir Herman Plinney",
+      "nation": "Algoma",
+      "team": 0,
+      "color": "rgba(162,156,156,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 21,
+      "name": "user166806685",
+      "nation": "West Quebec",
+      "team": 0,
+      "color": "rgba(92,247,168,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 22,
+      "name": "NoodlesLover",
+      "nation": "East Ontario",
+      "team": 0,
+      "color": "rgba(249,160,90,255)",
+      "capital": 2463,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 23,
+      "name": "Médéric Martin",
+      "nation": "Montreal",
+      "team": 0,
+      "color": "rgba(152,140,140,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 24,
+      "name": "user163012665",
+      "nation": "East Quebec",
+      "team": 0,
+      "color": "rgba(255,197,23,255)",
+      "capital": 2537,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 25,
+      "name": "Francis Nelson McCrea",
+      "nation": "Sherbrooke",
+      "team": 0,
+      "color": "rgba(152,150,150,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 26,
+      "name": "Sir Edwin Ericson",
+      "nation": "New Brunswick",
+      "team": 0,
+      "color": "rgba(107,104,104,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 27,
+      "name": "Sir Walter Edward Davidson",
+      "nation": "Nain",
+      "team": 0,
+      "color": "rgba(170,165,165,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 28,
+      "name": "Sir Charles Alphonse Pantaléon",
+      "nation": "Mingan",
+      "team": 0,
+      "color": "rgba(207,203,203,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 29,
+      "name": "Edward Morris",
+      "nation": "Newfoundland",
+      "team": 0,
+      "color": "rgba(150,143,143,255)",
+      "capital": 2523,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 30,
+      "name": "Sir Robert Bond",
+      "nation": "Nova Scotia",
+      "team": 0,
+      "color": "rgba(144,138,138,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 31,
+      "name": "peterli8787",
+      "nation": "Maine",
+      "team": 0,
+      "color": "rgba(218,101,240,255)",
+      "capital": 1775,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 32,
+      "name": "Allen M. Fletcher",
+      "nation": "Massachusetts",
+      "team": 0,
+      "color": "rgba(186,185,185,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 33,
+      "name": "Moreau_",
+      "nation": "New York",
+      "team": 0,
+      "color": "rgba(44,210,57,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 34,
+      "name": "user167303001",
+      "nation": "Pennsylvania",
+      "team": 0,
+      "color": "rgba(66,237,220,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 35,
+      "name": "James F. Fielder",
+      "nation": "New Jersey",
+      "team": 0,
+      "color": "rgba(173,170,170,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 36,
+      "name": "Edwin Sydney Stuart",
+      "nation": "North Pennsylvania",
+      "team": 0,
+      "color": "rgba(97,94,94,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 37,
+      "name": "Benjamin Arkinson",
+      "nation": "Virginia",
+      "team": 7,
+      "color": "rgba(255,166,73,255)",
+      "capital": 17,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 38,
+      "name": "Henry D. Hatfield",
+      "nation": "West Virginia",
+      "team": 0,
+      "color": "rgba(165,156,156,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 39,
+      "name": "user167160387",
+      "nation": "Ohio",
+      "team": 0,
+      "color": "rgba(207,137,137,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 40,
+      "name": "user166926581",
+      "nation": "Michigan",
+      "team": 0,
+      "color": "rgba(189,110,36,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 41,
+      "name": "Samuel Moffett Ralston",
+      "nation": "North Indiana",
+      "team": 0,
+      "color": "rgba(168,165,165,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 42,
+      "name": "Thomas R. Marshall",
+      "nation": "South Indiana",
+      "team": 0,
+      "color": "rgba(153,147,147,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 43,
+      "name": "Francis Edward McGovern",
+      "nation": "North Wisconsin",
+      "team": 0,
+      "color": "rgba(192,192,192,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 44,
+      "name": "James O. Davidson",
+      "nation": "South Wisconsin",
+      "team": 0,
+      "color": "rgba(115,115,115,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 45,
+      "name": "7a7kins",
+      "nation": "Minnesota",
+      "team": 0,
+      "color": "rgba(137,84,156,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 46,
+      "name": "user167317673",
+      "nation": "Kentucky",
+      "team": 0,
+      "color": "rgba(189,105,224,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 47,
+      "name": "General Z.A.T",
+      "nation": "Illinois",
+      "team": 0,
+      "color": "rgba(101,205,106,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 48,
+      "name": "Beryl F. Carroll",
+      "nation": "East Iowa",
+      "team": 0,
+      "color": "rgba(140,139,139,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 49,
+      "name": "George W. Clarke",
+      "nation": "West Iowa",
+      "team": 0,
+      "color": "rgba(114,109,109,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 50,
+      "name": "Louis Benjamin Hanna",
+      "nation": "North Dakota",
+      "team": 0,
+      "color": "rgba(181,174,174,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 51,
+      "name": "user166079224",
+      "nation": "South Dakota",
+      "team": 0,
+      "color": "rgba(234,212,84,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 52,
+      "name": "user167304018",
+      "nation": "Montana",
+      "team": 0,
+      "color": "rgba(101,223,83,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 53,
+      "name": "Sam V. Stewart",
+      "nation": "North Montana",
+      "team": 0,
+      "color": "rgba(166,156,156,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 54,
+      "name": "King Jayku",
+      "nation": "Washington",
+      "team": 8,
+      "color": "rgba(71,106,236,255)",
+      "capital": 1662,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 55,
+      "name": "Peter Bartholomew Moctelme",
+      "nation": "North Idaho",
+      "team": 0,
+      "color": "rgba(173,162,162,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 56,
+      "name": "brandur99",
+      "nation": "Oregon",
+      "team": 0,
+      "color": "rgba(150,92,207,255)",
+      "capital": 1897,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 57,
+      "name": "John Michner Haines",
+      "nation": "South Idaho",
+      "team": 0,
+      "color": "rgba(130,122,122,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 58,
+      "name": "Joseph Maull Carey",
+      "nation": "North Wyoming",
+      "team": 0,
+      "color": "rgba(173,171,171,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 59,
+      "name": "Bryant Butler Brooks",
+      "nation": "South Wyoming",
+      "team": 0,
+      "color": "rgba(110,110,110,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 60,
+      "name": "Dongska",
+      "nation": "Nebraska",
+      "team": 0,
+      "color": "rgba(50,91,194,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 61,
+      "name": "user167098162",
+      "nation": "Missouri",
+      "team": 0,
+      "color": "rgba(82,152,249,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 62,
+      "name": "George Hartshorn Hodges",
+      "nation": "East Kansas",
+      "team": 0,
+      "color": "rgba(170,166,166,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 63,
+      "name": "Walter R. Stubbs",
+      "nation": "West Kansas",
+      "team": 0,
+      "color": "rgba(102,98,98,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 64,
+      "name": "ARCEUS77",
+      "nation": "North Carolina",
+      "team": 0,
+      "color": "rgba(198,110,110,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 65,
+      "name": "Miles Benjamin McSweeney",
+      "nation": "South Carolina",
+      "team": 0,
+      "color": "rgba(160,159,159,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 66,
+      "name": "Ben W. Hooper",
+      "nation": "East Tennessee",
+      "team": 0,
+      "color": "rgba(160,155,155,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 67,
+      "name": "Malcolm R. Patterson",
+      "nation": "West Tennessee",
+      "team": 0,
+      "color": "rgba(208,205,205,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 68,
+      "name": "user165358237",
+      "nation": "Georgia",
+      "team": 0,
+      "color": "rgba(227,140,226,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 69,
+      "name": "OGDumbledore",
+      "nation": "Florida",
+      "team": 0,
+      "color": "rgba(240,68,202,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 70,
+      "name": "Merritt Horning",
+      "nation": "Cuba",
+      "team": 0,
+      "color": "rgba(172,172,172,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 71,
+      "name": "B. B. Comer",
+      "nation": "North Alabama",
+      "team": 0,
+      "color": "rgba(163,157,157,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 72,
+      "name": "Emmet O'Neal",
+      "nation": "South Alabama",
+      "team": 0,
+      "color": "rgba(140,136,136,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 73,
+      "name": "xLONExWOLFx",
+      "nation": "Mississippi",
+      "team": 0,
+      "color": "rgba(94,242,247,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 74,
+      "name": "user44370627",
+      "nation": "Louisiana",
+      "team": 7,
+      "color": "rgba(208,199,88,255)",
+      "capital": 2009,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 75,
+      "name": "Junius M. Futrell",
+      "nation": "North Arkansas",
+      "team": 0,
+      "color": "rgba(163,159,159,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 76,
+      "name": "George Washington Hays",
+      "nation": "South Arkansas",
+      "team": 0,
+      "color": "rgba(92,90,90,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 77,
+      "name": "user167319067",
+      "nation": "Texas",
+      "team": 0,
+      "color": "rgba(31,159,19,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 78,
+      "name": "William Pettus Hobby",
+      "nation": "East Texas",
+      "team": 0,
+      "color": "rgba(166,160,160,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 79,
+      "name": "neca9593",
+      "nation": "Oklahoma",
+      "team": 0,
+      "color": "rgba(255,177,84,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 80,
+      "name": "Walter Millers",
+      "nation": "Amarillo",
+      "team": 0,
+      "color": "rgba(192,192,192,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 81,
+      "name": "gardinerius",
+      "nation": "Colorado",
+      "team": 0,
+      "color": "rgba(240,195,195,255)",
+      "capital": 1873,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 82,
+      "name": "William C. McDonald",
+      "nation": "North New Mexico",
+      "team": 0,
+      "color": "rgba(146,146,146,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 83,
+      "name": "William Joseph Mills",
+      "nation": "South New Mexico",
+      "team": 0,
+      "color": "rgba(107,105,105,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 84,
+      "name": "Gouldy89753",
+      "nation": "Coahuila",
+      "team": 8,
+      "color": "rgba(66,191,157,255)",
+      "capital": 2161,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 85,
+      "name": "Emiliano Zapata Salazar",
+      "nation": "Tamaulipas",
+      "team": 0,
+      "color": "rgba(202,202,202,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 86,
+      "name": "Luis Medina Barrón",
+      "nation": "Zacatecas",
+      "team": 0,
+      "color": "rgba(127,125,125,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 87,
+      "name": "Jake Schaerer",
+      "nation": "West Mexico",
+      "team": 0,
+      "color": "rgba(223,206,112,255)",
+      "capital": 2164,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 88,
+      "name": "Dyer511",
+      "nation": "Chihuahua",
+      "team": 8,
+      "color": "rgba(234,175,81,255)",
+      "capital": 2147,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 89,
+      "name": "James Edward Ferguson",
+      "nation": "El Paso",
+      "team": 0,
+      "color": "rgba(202,198,198,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 90,
+      "name": "Plutarco Elías Calles",
+      "nation": "Sonora",
+      "team": 0,
+      "color": "rgba(175,171,171,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 91,
+      "name": "Francisco Villa",
+      "nation": "Baja California",
+      "team": 0,
+      "color": "rgba(202,199,199,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 92,
+      "name": "cpt Omer",
+      "nation": "Central Mexico",
+      "team": 0,
+      "color": "rgba(102,88,204,255)",
+      "capital": -1,
+      "ai": false,
+      "defeated": true
+    },
+    {
+      "id": 93,
+      "name": "Antonio González Lopez",
+      "nation": "Estados del Pacífico",
+      "team": 0,
+      "color": "rgba(144,140,140,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 94,
+      "name": "Angelo Reyes",
+      "nation": "Guerrero",
+      "team": 0,
+      "color": "rgba(105,102,102,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 95,
+      "name": "Unquietershark1",
+      "nation": "South Mexico",
+      "team": 0,
+      "color": "rgba(58,186,77,255)",
+      "capital": 44,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 96,
+      "name": "Manuel José Estrada Cabrera",
+      "nation": "Guatemala",
+      "team": 0,
+      "color": "rgba(168,165,165,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 97,
+      "name": "Francisco Bertrand Barahona",
+      "nation": "Honduras",
+      "team": 0,
+      "color": "rgba(134,130,130,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 98,
+      "name": "Carlos Meléndez Ramírez",
+      "nation": "Salvador",
+      "team": 0,
+      "color": "rgba(108,105,105,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 99,
+      "name": "Manuel José Estrada Cabrera",
+      "nation": "Nicaragua",
+      "team": 0,
+      "color": "rgba(202,202,202,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 100,
+      "name": "Ricardo Jiménez Oreamuno",
+      "nation": "Costa Rica",
+      "team": 0,
+      "color": "rgba(156,153,153,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 101,
+      "name": "Arthur Yager",
+      "nation": "Caribbean Islands",
+      "team": 0,
+      "color": "rgba(175,170,170,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": false
+    },
+    {
+      "id": 102,
+      "name": "user167315262",
+      "nation": "Arizona",
+      "team": 0,
+      "color": "rgba(204,141,121,255)",
+      "capital": 1767,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 103,
+      "name": "Tasker Lowndes Oddie",
+      "nation": "North Nevada",
+      "team": 0,
+      "color": "rgba(139,136,136,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 104,
+      "name": "Commander mosse",
+      "nation": "Utah",
+      "team": 0,
+      "color": "rgba(199,198,85,255)",
+      "capital": 1883,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 105,
+      "name": "usertom22",
+      "nation": "North California",
+      "team": 0,
+      "color": "rgba(224,141,189,255)",
+      "capital": 47,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 106,
+      "name": "Emperor of Romans",
+      "nation": "South California",
+      "team": 0,
+      "color": "rgba(75,100,214,255)",
+      "capital": 1791,
+      "ai": false,
+      "defeated": false
+    },
+    {
+      "id": 107,
+      "name": "Emmet D. Boyle",
+      "nation": "Central Nevada",
+      "team": 0,
+      "color": "rgba(141,125,125,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": 108,
+      "name": "Denver Sylvester Dickerson",
+      "nation": "South Nevada",
+      "team": 0,
+      "color": "rgba(89,89,89,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": true
+    },
+    {
+      "id": -1,
+      "name": "player-1",
+      "nation": "",
+      "team": 0,
+      "color": "rgba(192,192,192,255)",
+      "capital": -1,
+      "ai": true,
+      "defeated": false
+    }
+  ],
+  "playerStats": {
+    "1": {
+      "provincesCaptured": 20,
+      "provincesLost": 0,
+      "unit2killed": 243,
+      "unit2lost": 147
+    },
+    "3": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 16,
+      "unit2lost": 58
+    },
+    "4": {
+      "provincesCaptured": 17,
+      "provincesLost": 1,
+      "unit2killed": 109,
+      "unit2lost": 11
+    },
+    "5": {
+      "provincesCaptured": 0,
+      "provincesLost": 11,
+      "unit2killed": 15,
+      "unit2lost": 103
+    },
+    "6": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 10,
+      "unit2lost": 45
+    },
+    "7": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 10,
+      "unit2lost": 44
+    },
+    "8": {
+      "provincesCaptured": 0,
+      "provincesLost": 10,
+      "unit2killed": 8,
+      "unit2lost": 85
+    },
+    "10": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 7,
+      "unit2lost": 53
+    },
+    "12": {
+      "provincesCaptured": 2,
+      "provincesLost": 0,
+      "unit2killed": 19,
+      "unit2lost": 22
+    },
+    "13": {
+      "provincesCaptured": 16,
+      "provincesLost": 4,
+      "unit2killed": 202,
+      "unit2lost": 120
+    },
+    "16": {
+      "provincesCaptured": 15,
+      "provincesLost": 0,
+      "unit2killed": 215,
+      "unit2lost": 59
+    },
+    "17": {
+      "provincesCaptured": 0,
+      "provincesLost": 7,
+      "unit2killed": 10,
+      "unit2lost": 68
+    },
+    "18": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 22,
+      "unit2lost": 64
+    },
+    "19": {
+      "provincesCaptured": 0,
+      "provincesLost": 11,
+      "unit2killed": 36,
+      "unit2lost": 115
+    },
+    "20": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 6,
+      "unit2lost": 41
+    },
+    "21": {
+      "provincesCaptured": 6,
+      "provincesLost": 16,
+      "unit2killed": 123,
+      "unit2lost": 173
+    },
+    "22": {
+      "provincesCaptured": 130,
+      "provincesLost": 22,
+      "unit2killed": 645,
+      "unit2lost": 121
+    },
+    "23": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 10,
+      "unit2lost": 49
+    },
+    "24": {
+      "provincesCaptured": 20,
+      "provincesLost": 3,
+      "unit2killed": 236,
+      "unit2lost": 171
+    },
+    "25": {
+      "provincesCaptured": 0,
+      "provincesLost": 2,
+      "unit2killed": 14,
+      "unit2lost": 15
+    },
+    "26": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 0,
+      "unit2lost": 34
+    },
+    "27": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 17,
+      "unit2lost": 52
+    },
+    "28": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 14,
+      "unit2lost": 63
+    },
+    "29": {
+      "provincesCaptured": 0,
+      "provincesLost": 0,
+      "unit2killed": 0,
+      "unit2lost": 0
+    },
+    "30": {
+      "provincesCaptured": 0,
+      "provincesLost": 2,
+      "unit2killed": 1,
+      "unit2lost": 21
+    },
+    "31": {
+      "provincesCaptured": 18,
+      "provincesLost": 1,
+      "unit2killed": 187,
+      "unit2lost": 54
+    },
+    "32": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 4,
+      "unit2lost": 30
+    },
+    "33": {
+      "provincesCaptured": 26,
+      "provincesLost": 36,
+      "unit2killed": 109,
+      "unit2lost": 130
+    },
+    "34": {
+      "provincesCaptured": 1,
+      "provincesLost": 11,
+      "unit2killed": 50,
+      "unit2lost": 97
+    },
+    "35": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
+      "unit2killed": 3,
+      "unit2lost": 10
+    },
+    "36": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 31,
+      "unit2lost": 50
+    },
+    "37": {
+      "provincesCaptured": 157,
+      "provincesLost": 21,
+      "unit2killed": 1047,
+      "unit2lost": 398
+    },
+    "38": {
+      "provincesCaptured": 2,
+      "provincesLost": 8,
+      "unit2killed": 26,
+      "unit2lost": 56
+    },
+    "39": {
+      "provincesCaptured": 9,
+      "provincesLost": 21,
+      "unit2killed": 76,
+      "unit2lost": 103
+    },
+    "40": {
+      "provincesCaptured": 0,
+      "provincesLost": 11,
+      "unit2killed": 19,
+      "unit2lost": 101
+    },
+    "41": {
+      "provincesCaptured": 4,
+      "provincesLost": 8,
+      "unit2killed": 26,
+      "unit2lost": 42
+    },
+    "42": {
+      "provincesCaptured": 2,
+      "provincesLost": 6,
+      "unit2killed": 28,
+      "unit2lost": 40
+    },
+    "43": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 7,
+      "unit2lost": 54
+    },
+    "44": {
+      "provincesCaptured": 1,
+      "provincesLost": 5,
+      "unit2killed": 19,
+      "unit2lost": 31
+    },
+    "45": {
+      "provincesCaptured": 3,
+      "provincesLost": 15,
+      "unit2killed": 16,
+      "unit2lost": 117
+    },
+    "46": {
+      "provincesCaptured": 3,
+      "provincesLost": 13,
+      "unit2killed": 4,
+      "unit2lost": 87
+    },
+    "47": {
+      "provincesCaptured": 3,
+      "provincesLost": 13,
+      "unit2killed": 81,
+      "unit2lost": 108
+    },
+    "48": {
+      "provincesCaptured": 4,
+      "provincesLost": 10,
+      "unit2killed": 32,
+      "unit2lost": 40
+    },
+    "49": {
+      "provincesCaptured": 3,
+      "provincesLost": 7,
+      "unit2killed": 1,
+      "unit2lost": 41
+    },
+    "50": {
+      "provincesCaptured": 0,
+      "provincesLost": 13,
+      "unit2killed": 21,
+      "unit2lost": 64
+    },
+    "51": {
+      "provincesCaptured": 2,
+      "provincesLost": 12,
+      "unit2killed": 29,
+      "unit2lost": 94
+    },
+    "52": {
+      "provincesCaptured": 14,
+      "provincesLost": 24,
+      "unit2killed": 122,
+      "unit2lost": 127
+    },
+    "53": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 23,
+      "unit2lost": 37
+    },
+    "54": {
+      "provincesCaptured": 14,
+      "provincesLost": 0,
+      "unit2killed": 246,
+      "unit2lost": 68
+    },
+    "55": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 24,
+      "unit2lost": 30
+    },
+    "56": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 24,
+      "unit2lost": 129
+    },
+    "57": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 70,
+      "unit2lost": 60
+    },
+    "58": {
+      "provincesCaptured": 3,
+      "provincesLost": 10,
+      "unit2killed": 23,
+      "unit2lost": 46
+    },
+    "59": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 21,
+      "unit2lost": 51
+    },
+    "60": {
+      "provincesCaptured": 23,
+      "provincesLost": 25,
+      "unit2killed": 173,
+      "unit2lost": 125
+    },
+    "61": {
+      "provincesCaptured": 2,
+      "provincesLost": 13,
+      "unit2killed": 47,
+      "unit2lost": 88
+    },
+    "62": {
+      "provincesCaptured": 3,
+      "provincesLost": 8,
+      "unit2killed": 23,
+      "unit2lost": 24
+    },
+    "63": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 10,
+      "unit2lost": 56
+    },
+    "64": {
+      "provincesCaptured": 6,
+      "provincesLost": 16,
+      "unit2killed": 49,
+      "unit2lost": 130
+    },
+    "65": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 5,
+      "unit2lost": 60
+    },
+    "66": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 5,
+      "unit2lost": 31
+    },
+    "67": {
+      "provincesCaptured": 1,
+      "provincesLost": 7,
+      "unit2killed": 7,
+      "unit2lost": 47
+    },
+    "68": {
+      "provincesCaptured": 14,
+      "provincesLost": 24,
+      "unit2killed": 168,
+      "unit2lost": 126
+    },
+    "69": {
+      "provincesCaptured": 15,
+      "provincesLost": 24,
+      "unit2killed": 96,
+      "unit2lost": 157
+    },
+    "70": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 14,
+      "unit2lost": 58
+    },
+    "71": {
+      "provincesCaptured": 1,
+      "provincesLost": 5,
+      "unit2killed": 23,
+      "unit2lost": 46
+    },
+    "72": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 3,
+      "unit2lost": 39
+    },
+    "73": {
+      "provincesCaptured": 2,
+      "provincesLost": 14,
+      "unit2killed": 34,
+      "unit2lost": 116
+    },
+    "74": {
+      "provincesCaptured": 41,
+      "provincesLost": 5,
+      "unit2killed": 477,
+      "unit2lost": 95
+    },
+    "75": {
+      "provincesCaptured": 5,
+      "provincesLost": 8,
+      "unit2killed": 32,
+      "unit2lost": 32
+    },
+    "76": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 6,
+      "unit2lost": 53
+    },
+    "77": {
+      "provincesCaptured": 1,
+      "provincesLost": 12,
+      "unit2killed": 13,
+      "unit2lost": 160
+    },
+    "78": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 10,
+      "unit2lost": 59
+    },
+    "79": {
+      "provincesCaptured": 9,
+      "provincesLost": 19,
+      "unit2killed": 55,
+      "unit2lost": 93
+    },
+    "80": {
+      "provincesCaptured": 2,
+      "provincesLost": 5,
+      "unit2killed": 1,
+      "unit2lost": 42
+    },
+    "81": {
+      "provincesCaptured": 6,
+      "provincesLost": 5,
+      "unit2killed": 55,
+      "unit2lost": 111
+    },
+    "82": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 21,
+      "unit2lost": 70
+    },
+    "83": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 8,
+      "unit2lost": 50
+    },
+    "84": {
+      "provincesCaptured": 30,
+      "provincesLost": 1,
+      "unit2killed": 229,
+      "unit2lost": 107
+    },
+    "85": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 6,
+      "unit2lost": 36
+    },
+    "86": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 7,
+      "unit2lost": 30
+    },
+    "87": {
+      "provincesCaptured": 20,
+      "provincesLost": 4,
+      "unit2killed": 199,
+      "unit2lost": 28
+    },
+    "88": {
+      "provincesCaptured": 31,
+      "provincesLost": 5,
+      "unit2killed": 199,
+      "unit2lost": 46
+    },
+    "89": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 12,
+      "unit2lost": 30
+    },
+    "90": {
+      "provincesCaptured": 0,
+      "provincesLost": 6,
+      "unit2killed": 8,
+      "unit2lost": 49
+    },
+    "91": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 3,
+      "unit2lost": 51
+    },
+    "92": {
+      "provincesCaptured": 3,
+      "provincesLost": 13,
+      "unit2killed": 8,
+      "unit2lost": 118
+    },
+    "93": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 4,
+      "unit2lost": 41
+    },
+    "94": {
+      "provincesCaptured": 0,
+      "provincesLost": 3,
+      "unit2killed": 6,
+      "unit2lost": 24
+    },
+    "95": {
+      "provincesCaptured": 27,
+      "provincesLost": 2,
+      "unit2killed": 334,
+      "unit2lost": 98
+    },
+    "96": {
+      "provincesCaptured": 0,
+      "provincesLost": 4,
+      "unit2killed": 10,
+      "unit2lost": 41
+    },
+    "97": {
+      "provincesCaptured": 0,
+      "provincesLost": 2,
+      "unit2killed": 8,
+      "unit2lost": 21
+    },
+    "98": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
+      "unit2killed": 3,
+      "unit2lost": 10
+    },
+    "99": {
+      "provincesCaptured": 1,
+      "provincesLost": 3,
+      "unit2killed": 5,
+      "unit2lost": 23
+    },
+    "100": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
+      "unit2killed": 4,
+      "unit2lost": 13
+    },
+    "101": {
+      "provincesCaptured": 0,
+      "provincesLost": 5,
+      "unit2killed": 4,
+      "unit2lost": 22
+    },
+    "102": {
+      "provincesCaptured": 11,
+      "provincesLost": 23,
+      "unit2killed": 151,
+      "unit2lost": 119
+    },
+    "103": {
+      "provincesCaptured": 0,
+      "provincesLost": 7,
+      "unit2killed": 5,
+      "unit2lost": 49
+    },
+    "104": {
+      "provincesCaptured": 0,
+      "provincesLost": 1,
+      "unit2killed": 0,
+      "unit2lost": 1
+    },
+    "105": {
+      "provincesCaptured": 28,
+      "provincesLost": 5,
+      "unit2killed": 185,
+      "unit2lost": 113
+    },
+    "106": {
+      "provincesCaptured": 4,
+      "provincesLost": 15,
+      "unit2killed": 11,
+      "unit2lost": 53
+    },
+    "107": {
+      "provincesCaptured": 4,
+      "provincesLost": 10,
+      "unit2killed": 33,
+      "unit2lost": 69
+    },
+    "108": {
+      "provincesCaptured": 2,
+      "provincesLost": 8,
+      "unit2killed": 40,
+      "unit2lost": 77
+    }
+  },
+  "relations": {
+    "players": 108,
+    "neighborRelations": {
+      "1": {
+        "3": -2,
+        "5": -2,
+        "37": -2,
+        "52": -2,
+        "104": -2,
+        "106": -2
+      },
+      "3": {
+        "1": -2,
+        "22": 0
+      },
+      "4": {
+        "6": -2,
+        "8": -2,
+        "52": -2
+      },
+      "5": {
+        "1": -2,
+        "54": -2
+      },
+      "6": {
+        "4": -2,
+        "54": -2
+      },
+      "7": {
+        "54": -2
+      },
+      "8": {
+        "4": -2
+      },
+      "10": {
+        "13": -2,
+        "22": 0
+      },
+      "12": {
+        "53": -2
+      },
+      "13": {
+        "10": -2,
+        "19": -2,
+        "20": -2,
+        "24": -2
+      },
+      "14": {
+        "22": 0
+      },
+      "16": {
+        "17": -2,
+        "18": -2,
+        "19": -2
+      },
+      "17": {
+        "16": -2,
+        "22": -2
+      },
+      "18": {
+        "16": -2
+      },
+      "19": {
+        "13": -2,
+        "16": -2
+      },
+      "20": {
+        "13": -2,
+        "21": -2,
+        "22": 0
+      },
+      "21": {
+        "20": -2,
+        "22": -2,
+        "23": -2,
+        "28": -2,
+        "32": -2,
+        "37": -2
+      },
+      "22": {
+        "2": 4,
+        "3": 4,
+        "6": 4,
+        "8": 4,
+        "9": 4,
+        "10": 4,
+        "11": 4,
+        "12": 3,
+        "14": 4,
+        "15": 4,
+        "17": -2,
+        "18": 4,
+        "19": 4,
+        "20": 4,
+        "21": -2,
+        "22": 3,
+        "23": -2,
+        "24": -2,
+        "25": 4,
+        "26": 4,
+        "28": 4,
+        "29": 4,
+        "30": 4,
+        "31": 4,
+        "32": 4,
+        "33": -2,
+        "34": 4,
+        "37": 4,
+        "39": -2,
+        "40": -2,
+        "41": -2,
+        "42": 4,
+        "43": -2,
+        "44": -2,
+        "45": -2,
+        "47": -2,
+        "48": -2,
+        "49": -2,
+        "50": -2,
+        "51": 4,
+        "52": -2,
+        "56": 3,
+        "57": 4,
+        "58": 4,
+        "59": 4,
+        "60": -2,
+        "61": -2,
+        "62": -2,
+        "63": -2,
+        "66": 4,
+        "68": 4,
+        "69": 4,
+        "70": 4,
+        "71": 4,
+        "72": 4,
+        "73": 4,
+        "74": 4,
+        "75": 4,
+        "76": 4,
+        "77": 3,
+        "78": 4,
+        "79": -2,
+        "80": -2,
+        "81": -2,
+        "82": 4,
+        "87": -2,
+        "88": -2,
+        "91": 4,
+        "94": 4,
+        "96": 4,
+        "97": 4,
+        "98": 4,
+        "99": 4,
+        "100": 4,
+        "101": 4,
+        "102": 4,
+        "104": 4,
+        "106": 4,
+        "107": 4,
+        "108": 4
+      },
+      "23": {
+        "21": -2,
+        "22": -2,
+        "31": -2
+      },
+      "24": {
+        "13": -2,
+        "22": -2,
+        "25": -2,
+        "27": -2,
+        "28": -2,
+        "31": -2,
+        "37": -2
+      },
+      "25": {
+        "24": -2
+      },
+      "26": {
+        "31": -2
+      },
+      "27": {
+        "24": -2
+      },
+      "28": {
+        "21": -2,
+        "24": -2
+      },
+      "29": {
+        "31": -2
+      },
+      "30": {
+        "31": -2
+      },
+      "31": {
+        "22": 4,
+        "23": -2,
+        "24": -2,
+        "26": -2,
+        "29": -2,
+        "30": -2,
+        "33": -2,
+        "64": -2,
+        "81": -2,
+        "87": -2
+      },
+      "32": {
+        "21": -2,
+        "37": -2
+      },
+      "33": {
+        "22": -2,
+        "31": -2,
+        "36": -2,
+        "38": -2,
+        "39": -2
+      },
+      "34": {
+        "36": -2,
+        "37": -2,
+        "39": -2
+      },
+      "35": {
+        "37": -2
+      },
+      "36": {
+        "33": -2,
+        "34": -2,
+        "39": -2
+      },
+      "37": {
+        "1": -2,
+        "21": -2,
+        "22": 4,
+        "24": -2,
+        "32": -2,
+        "34": -2,
+        "35": -2,
+        "38": -2,
+        "41": -2,
+        "42": -2,
+        "45": -2,
+        "46": -2,
+        "47": -2,
+        "48": -2,
+        "49": -2,
+        "60": -2,
+        "61": -2,
+        "64": -2,
+        "66": -2,
+        "67": -2,
+        "68": -2,
+        "69": -2,
+        "70": -2,
+        "77": -2,
+        "79": -2,
+        "80": -2,
+        "81": -2,
+        "84": -2,
+        "87": -2,
+        "88": -2,
+        "95": -2,
+        "101": -2
+      },
+      "38": {
+        "33": -2,
+        "37": -2,
+        "39": -2
+      },
+      "39": {
+        "22": -2,
+        "33": -2,
+        "34": -2,
+        "36": -2,
+        "38": -2,
+        "41": -2,
+        "42": -2
+      },
+      "40": {
+        "22": -2
+      },
+      "41": {
+        "22": -2,
+        "37": -2,
+        "39": -2,
+        "47": -2
+      },
+      "42": {
+        "37": -2,
+        "39": -2,
+        "47": -2
+      },
+      "43": {
+        "22": -2
+      },
+      "44": {
+        "22": -2,
+        "47": -2
+      },
+      "45": {
+        "22": -2,
+        "37": -2
+      },
+      "46": {
+        "37": -2
+      },
+      "47": {
+        "22": -2,
+        "37": -2,
+        "41": -2,
+        "42": -2,
+        "44": -2,
+        "48": -2
+      },
+      "48": {
+        "22": -2,
+        "37": -2,
+        "47": -2
+      },
+      "49": {
+        "22": -2,
+        "37": -2
+      },
+      "50": {
+        "22": -2,
+        "60": -2
+      },
+      "51": {
+        "60": -2
+      },
+      "52": {
+        "1": -2,
+        "4": -2,
+        "22": -2,
+        "53": -2,
+        "55": -2,
+        "58": -2
+      },
+      "53": {
+        "12": -2,
+        "52": -2
+      },
+      "54": {
+        "5": -2,
+        "6": -2,
+        "7": -2,
+        "55": -2,
+        "56": -2,
+        "57": -2
+      },
+      "55": {
+        "52": -2,
+        "54": -2
+      },
+      "56": {
+        "54": -2
+      },
+      "57": {
+        "54": -2,
+        "105": -2
+      },
+      "58": {
+        "52": -2
+      },
+      "59": {
+        "81": -2
+      },
+      "60": {
+        "22": -2,
+        "37": -2,
+        "50": -2,
+        "51": -2,
+        "62": -2
+      },
+      "61": {
+        "22": -2,
+        "37": -2,
+        "62": -2,
+        "79": -2
+      },
+      "62": {
+        "22": -2,
+        "60": -2,
+        "61": -2
+      },
+      "63": {
+        "22": -2
+      },
+      "64": {
+        "31": -2,
+        "37": -2,
+        "65": -2,
+        "68": -2
+      },
+      "65": {
+        "64": -2,
+        "68": -2
+      },
+      "66": {
+        "37": -2
+      },
+      "67": {
+        "37": -2,
+        "74": -2
+      },
+      "68": {
+        "37": -2,
+        "64": -2,
+        "65": -2,
+        "69": -2
+      },
+      "69": {
+        "22": 3,
+        "37": -2,
+        "68": -2,
+        "71": -2,
+        "72": -2,
+        "74": -2
+      },
+      "70": {
+        "37": -2,
+        "95": -2
+      },
+      "71": {
+        "69": -2,
+        "74": -2
+      },
+      "72": {
+        "22": 0,
+        "69": -2
+      },
+      "73": {
+        "74": -2
+      },
+      "74": {
+        "22": 4,
+        "67": -2,
+        "69": -2,
+        "71": -2,
+        "73": -2,
+        "76": -2,
+        "77": -2,
+        "78": -2,
+        "84": -2,
+        "87": -2,
+        "88": -2
+      },
+      "76": {
+        "74": -2
+      },
+      "77": {
+        "22": 0,
+        "37": -2,
+        "74": -2,
+        "84": -2,
+        "88": -2
+      },
+      "78": {
+        "74": -2
+      },
+      "79": {
+        "22": -2,
+        "37": -2,
+        "61": -2
+      },
+      "80": {
+        "22": -2,
+        "37": -2
+      },
+      "81": {
+        "22": -2,
+        "31": -2,
+        "37": -2,
+        "59": -2,
+        "87": -2
+      },
+      "82": {
+        "84": -2
+      },
+      "83": {
+        "102": -2
+      },
+      "84": {
+        "37": -2,
+        "74": -2,
+        "77": -2,
+        "82": -2,
+        "85": -2,
+        "86": -2,
+        "89": -2,
+        "102": -2,
+        "106": -2
+      },
+      "85": {
+        "84": -2,
+        "87": -2
+      },
+      "86": {
+        "84": -2,
+        "87": -2
+      },
+      "87": {
+        "22": -2,
+        "31": -2,
+        "37": -2,
+        "74": -2,
+        "81": -2,
+        "85": -2,
+        "86": -2,
+        "92": -2,
+        "93": -2,
+        "94": -2
+      },
+      "88": {
+        "22": -2,
+        "37": -2,
+        "74": -2,
+        "77": -2,
+        "90": -2,
+        "91": -2,
+        "102": -2,
+        "106": -2
+      },
+      "89": {
+        "84": -2,
+        "102": -2
+      },
+      "90": {
+        "88": -2
+      },
+      "91": {
+        "88": -2
+      },
+      "92": {
+        "87": -2,
+        "95": -2
+      },
+      "93": {
+        "87": -2
+      },
+      "94": {
+        "87": -2,
+        "95": -2
+      },
+      "95": {
+        "37": -2,
+        "70": -2,
+        "92": -2,
+        "94": -2,
+        "96": -2,
+        "97": -2,
+        "98": -2,
+        "99": -2,
+        "100": -2,
+        "101": -2
+      },
+      "96": {
+        "95": -2
+      },
+      "97": {
+        "95": -2
+      },
+      "98": {
+        "95": -2
+      },
+      "99": {
+        "95": -2
+      },
+      "100": {
+        "95": -2
+      },
+      "101": {
+        "37": -2,
+        "95": -2
+      },
+      "102": {
+        "83": -2,
+        "84": -2,
+        "88": -2,
+        "89": -2,
+        "105": -2,
+        "108": -2
+      },
+      "103": {
+        "105": -2
+      },
+      "104": {
+        "1": -2
+      },
+      "105": {
+        "57": -2,
+        "102": -2,
+        "103": -2,
+        "107": -2,
+        "108": -2
+      },
+      "106": {
+        "1": -2,
+        "22": 4,
+        "84": -2,
+        "88": -2,
+        "107": -2
+      },
+      "107": {
+        "105": -2,
+        "106": -2
+      },
+      "108": {
+        "102": -2,
+        "105": -2
+      }
+    },
+    "endOfHonorPeriod": {},
+    "initialized": false
+  },
+  "coalitions": [
+    {
+      "teamID": 2,
+      "name": "Winners",
+      "score": 226,
+      "memberIDs": [
+        4,
+        13,
+        16
+      ],
+      "primaryColor": "rgba(40,40,80,255)",
+      "leaderID": 16
+    },
+    {
+      "teamID": 7,
+      "name": "united states of virginia",
+      "score": 561,
+      "memberIDs": [
+        37,
+        74
+      ],
+      "primaryColor": "rgba(120,140,120,255)",
+      "leaderID": 74
+    },
+    {
+      "teamID": 8,
+      "name": "The IT Department ",
+      "score": 270,
+      "memberIDs": [
+        54,
+        84,
+        88
+      ],
+      "primaryColor": "rgba(40,40,160,255)",
+      "leaderID": 84
+    }
+  ],
+  "scores": {
+    "0": 0,
+    "1": 61,
+    "2": 20,
+    "3": 0,
+    "4": 76,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 9,
+    "10": 0,
+    "11": 9,
+    "12": 34,
+    "13": 62,
+    "14": 8,
+    "15": 15,
+    "16": 88,
+    "17": 0,
+    "18": 0,
+    "19": 0,
+    "20": 0,
+    "21": 0,
+    "22": 281,
+    "23": 0,
+    "24": 43,
+    "25": 0,
+    "26": 0,
+    "27": 0,
+    "28": 0,
+    "29": 9,
+    "30": 0,
+    "31": 105,
+    "32": 0,
+    "33": 0,
+    "34": 0,
+    "35": 0,
+    "36": 0,
+    "37": 417,
+    "38": 0,
+    "39": 0,
+    "40": 0,
+    "41": 0,
+    "42": 0,
+    "43": 0,
+    "44": 0,
+    "45": 0,
+    "46": 0,
+    "47": 0,
+    "48": 0,
+    "49": 0,
+    "50": 0,
+    "51": 0,
+    "52": 0,
+    "53": 0,
+    "54": 44,
+    "55": 0,
+    "56": 31,
+    "57": 0,
+    "58": 0,
+    "59": 0,
+    "60": 0,
+    "61": 0,
+    "62": 0,
+    "63": 0,
+    "64": 0,
+    "65": 0,
+    "66": 0,
+    "67": 0,
+    "68": 0,
+    "69": 0,
+    "70": 0,
+    "71": 0,
+    "72": 0,
+    "73": 0,
+    "74": 144,
+    "75": 2,
+    "76": 0,
+    "77": 0,
+    "78": 0,
+    "79": 0,
+    "80": 0,
+    "81": 24,
+    "82": 0,
+    "83": 0,
+    "84": 118,
+    "85": 0,
+    "86": 0,
+    "87": 94,
+    "88": 108,
+    "89": 0,
+    "90": 0,
+    "91": 0,
+    "92": 0,
+    "93": 0,
+    "94": 0,
+    "95": 111,
+    "96": 0,
+    "97": 0,
+    "98": 0,
+    "99": 0,
+    "100": 0,
+    "101": 2,
+    "102": 1,
+    "103": 0,
+    "104": 42,
+    "105": 41,
+    "106": 2,
+    "107": 0,
+    "108": 0,
+    "-1": 0
+  },
+  "provinceCounts": {
+    "1": 27,
+    "2": 5,
+    "4": 27,
+    "9": 3,
+    "11": 5,
+    "12": 11,
+    "13": 21,
+    "14": 3,
+    "15": 6,
+    "16": 26,
+    "22": 104,
+    "24": 25,
+    "29": 3,
+    "31": 30,
+    "37": 146,
+    "54": 24,
+    "56": 9,
+    "74": 40,
+    "75": 1,
+    "81": 11,
+    "84": 37,
+    "87": 26,
+    "88": 34,
+    "95": 33,
+    "101": 2,
+    "102": 1,
+    "104": 11,
+    "105": 30,
+    "106": 1
+  },
+  "startInfo": {},
+  "myIdCandidate": null,
+  "reportedAt": "2026-07-19T17:15:47+08:00",
+  "gameID": "10840714"
+}
